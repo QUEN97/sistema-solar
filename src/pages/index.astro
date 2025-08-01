@@ -1,0 +1,122 @@
+---
+import Scene from "../components/Scene.astro";
+import { hudController } from "../components/SceneClient.js";
+---
+
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Sistema Solar HUD</title>
+		<link rel="stylesheet" href="/src/styles/global.css" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+			rel="stylesheet"
+		/>
+		<script type="module" src="../src/components/SceneClient.js" defer
+		></script>
+		<script src="https://unpkg.com/alpinejs" defer></script>
+	</head>
+
+	<body class="bg-black text-white min-h-screen overflow-hidden relative">
+		<!-- Escena 3D -->
+		<Scene client:load />
+
+		<!-- HUD estilo visor de casco -->
+		<div
+			class="hud-container absolute top-0 left-0 w-full h-full flex flex-col justify-between p-6 pointer-events-none"
+			x-data="hudController()"
+			x-init="init()"
+		>
+			<!-- Reflejo del visor -->
+			<div class="helmet-reflection"></div>
+
+			<!-- Marco del casco -->
+			<div class="hud-frame"></div>
+
+			<!-- Parte superior: Mensaje -->
+			<div
+				class="flex justify-between items-center animate-fadeIn pointer-events-auto"
+			>
+				<div class="hud-box">
+					<h1 class="hud-title" x-text="mensaje"></h1>
+				</div>
+
+				<!-- Datos planeta -->
+				<div class="hud-box text-right">
+					<p class="hud-label">
+						PLANETA: <span class="hud-value" x-text="planeta"
+						></span>
+					</p>
+					<p class="hud-label">
+						DISTANCIA: <span class="hud-value" x-text="distancia"
+						></span>
+					</p>
+					<p class="hud-label">
+						TEMP: <span class="hud-value" x-text="temperatura"
+						></span>
+					</p>
+				</div>
+			</div>
+
+			<!-- Botones -->
+			<div
+				class="flex justify-center gap-6 pb-10 animate-fadeIn pointer-events-auto"
+			>
+				<button @click="explorar()" class="hud-btn">EXPLORAR</button>
+				<button @click="continuar()" class="hud-btn">CONTINUAR</button>
+				<button @click="retroceder()" class="hud-btn">ATRÁS</button>
+			</div>
+		</div>
+		<aside
+			id="planet-info-panel"
+			style="display:none; position: fixed; top: 10%; right: 2%; width: 300px; background: rgba(0,255,255,0.1); border: 1px solid cyan; border-radius: 12px; padding: 20px; color: cyan; z-index: 20; font-family: 'Orbitron', sans-serif;"
+		>
+			<h2
+				class="planet-name"
+				style="font-size:1.8rem; font-weight:bold; margin-bottom:10px;"
+			>
+			</h2>
+			<p>
+				<strong>Distancia:</strong>
+				<span class="planet-distance"></span>
+			</p>
+			<p>
+				<strong>Temperatura:</strong>
+				<span class="planet-temp"></span>
+			</p>
+			<p
+				class="planet-extra"
+				style="margin-top: 15px; font-size: 0.9rem; line-height: 1.3;"
+			>
+			</p>
+
+			<button
+				onclick="hidePlanetInfoPanel()"
+				style="margin-top: 20px; padding: 8px 12px; background: transparent; border: 1px solid cyan; border-radius: 8px; color: cyan; font-weight: bold; cursor:pointer;"
+			>
+				Cerrar
+			</button>
+		</aside>
+		<aside
+			id="planet-funfacts-panel"
+			style="display:none; position: fixed; top: 10%; left: 2%; width: 300px; background: rgba(255,255,0,0.1); border: 1px solid yellow; border-radius: 12px; padding: 20px; color: yellow; z-index: 20; font-family: 'Orbitron', sans-serif; opacity: 0; transform: translateX(-50px);"
+		>
+			<h2 style="font-size:1.5rem; font-weight:bold; margin-bottom:10px;">
+				Datos Curiosos
+			</h2>
+			<p
+				class="planet-funfact"
+				style="font-size:0.9rem; line-height:1.4;"
+			>
+			</p>
+
+			<button
+				onclick="hideFunFactsPanel()"
+				style="margin-top: 20px; padding: 8px 12px; background: transparent; border: 1px solid yellow; border-radius: 8px; color: yellow; font-weight: bold; cursor:pointer;"
+			>
+				Cerrar
+			</button>
+		</aside>
+		
+	</body>
+</html>

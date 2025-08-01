@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === RESET Y BASE === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  background-color: black;
+  font-family: 'Orbitron', sans-serif;
+  color: white;
+  overflow: hidden;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* === ANIMACIONES === */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.3; }
+}
+
+@keyframes scanlineMove {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* === EFECTO HUD === */
+.hud-grid {
+  animation: fadeIn 1s ease forwards;
+}
+
+.blink {
+  animation: blink 1.5s infinite;
+}
+
+/* === SCANLINE === */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 255, 255, 0.2);
+  animation: scanlineMove 4s linear infinite;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* === CAJAS DEL HUD === */
+.bg-cyan-500\/20 {
+  background: rgba(0, 255, 255, 0.1) !important;
+}
+
+.border-cyan-400 {
+  border-color: rgba(0, 255, 255, 0.7) !important;
+}
+
+.text-cyan-300 {
+  color: rgba(0, 255, 255, 0.85) !important;
+}
+
+/* === BOTONES === */
+button {
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: rgba(0, 255, 255, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+  transform: scale(1.05);
+}
+
+/* === CANVAS 3D === */
+#scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, #020d1f 0%, #000000 100%);
+   filter: brightness(1.1) contrast(1.2);
+}
+
+/* === Reflejo del visor del casco con animación === */
+.helmet-reflection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+
+  background: radial-gradient(
+    ellipse at var(--reflect-x, 50%) var(--reflect-y, 50%),
+    rgba(255, 255, 255, var(--reflect-opacity, 0.04)) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
+
+  overflow: hidden;
+}
+
+.helmet-reflection::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+
+  background: url('/textures/scratch.png') repeat;
+  background-size: cover;
+  opacity: 0.06;
+  animation: visorDistortion 8s linear infinite;
+}
+
+.helmet-reflection::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0) 40%
+  );
+
+  mix-blend-mode: screen;
+  animation: visorBlink 6s ease-in-out infinite;
+}
+
+@keyframes visorDistortion {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(10px, 5px) rotate(1deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes visorBlink {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+}
+
+/* === Marco del visor del casco === */
+.hud-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 4px solid rgba(0, 255, 255, 0.3);
+  border-radius: 50% / 30%;
+  box-shadow: 0 0 20px rgba(0,255,255,0.2);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* === Caja de datos === */
+.hud-box {
+  background: rgba(0, 255, 255, 0.08);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  padding: 1rem;
+  border-radius: 1rem;
+  backdrop-filter: blur(3px);
+  z-index: 10;
+}
+
+/* === Texto HUD === */
+.hud-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: cyan;
+}
+
+.hud-label {
+  font-size: 0.85rem;
+  color: rgba(0, 255, 255, 0.7);
+}
+
+.hud-value {
+  color: cyan;
+  font-weight: bold;
+}
+
+.hud-container {
+  transition: transform 0.1s ease-out;
+  transform-style: preserve-3d;
+}
+
+/* === Botones estilo militar === */
+.hud-btn {
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.5);
+  color: cyan;
+  padding: 0.6rem 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.hud-btn:hover {
+  background: rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 10px cyan;
+  transform: scale(1.05);
+}
+
+.hud-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 5px cyan inset;
+}
