@@ -310,15 +310,30 @@ function crearPlanetas() {
     planetMeshesMap.set(p.nombre, mesh);
 
     if (p.nombre === 'Saturno') {
-      const ringGeo = new THREE.RingGeometry(size * 1.4, size * 2.4, 64);
+      const ringGeo = new THREE.RingGeometry(size * 1.4, size * 2.4, 256);
       const ringTexture = loader.load('/textures/saturn_ring.png');
+      ringTexture.rotation = Math.PI / 2; // 90 grados
+      ringTexture.center.set(0.5, 0.5);   // Rotar desde el centro
       const ringMat = new THREE.MeshBasicMaterial({
         map: ringTexture,
         side: THREE.DoubleSide,
         transparent: true,
+        alphaTest: 0.1
       });
+
+      // Ajuste de UV radial
+      const uvs = ringGeo.attributes.uv;
+      for (let i = 0; i < uvs.count; i++) {
+        const x = uvs.getX(i) * 2.0 - 1.0;
+        const y = uvs.getY(i) * 2.0 - 1.0;
+        const angle = Math.atan2(y, x);
+        const radius = Math.sqrt(x * x + y * y);
+        uvs.setXY(i, (angle + Math.PI) / (2 * Math.PI), radius);
+      }
+      uvs.needsUpdate = true;
+
       saturnRings = new THREE.Mesh(ringGeo, ringMat);
-      saturnRings.rotation.x = Math.PI / 2.5;
+      saturnRings.rotation.x = Math.PI / 2;
       scene.add(saturnRings);
     }
 
