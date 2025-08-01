@@ -132,14 +132,6 @@ const cinturónAsteroides = {
   velocidadMax: 0.006,
 };
 
-const cometa = {
-  nombre: 'Cometa',
-  textura: '/textures/comet.webp', // textura blanca o con brillo
-  tamaño: 0.3,
-  orbitaRadioA: 60,   // eje mayor (distancia máxima)
-  orbitaRadioB: 20,   // eje menor (distancia mínima)
-  orbitaVelocidad: 0.004,
-};
 
 let controls; // ✅ Control de órbita
 let controlsEnabled = false; // Para activar/desactivar controles
@@ -210,7 +202,6 @@ export function initScene() {
   crearISS();
   crearCinturónAsteroides();
   crearPolvoAsteroides();
-  crearCometa();
 
   lookAtTarget.set(0, 0, 0);
   camera.lookAt(lookAtTarget);
@@ -471,46 +462,6 @@ function crearPolvoAsteroides() {
   scene.add(points);
 }
 
-let cometaCola = null;
-
-function crearCometa() {
-  const loader = new THREE.TextureLoader();
-  const geometry = new THREE.SphereGeometry(cometa.tamaño, 16, 16);
-  const texture = loader.load(cometa.textura);
-  const material = new THREE.MeshStandardMaterial({
-    map: texture,
-    emissive: 0xffffff,
-    emissiveIntensity: 0.7
-  });
-
-  // Núcleo del cometa
-  cometaMesh = new THREE.Mesh(geometry, material);
-  scene.add(cometaMesh);
-
-  // Cola de partículas
-  const colaGeometry = new THREE.BufferGeometry();
-  const colaCount = 150;
-  const positions = new Float32Array(colaCount * 3);
-
-  for (let i = 0; i < colaCount; i++) {
-    positions[i * 3] = Math.random() * -5; // hacia atrás del cometa
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 1; // dispersión en Y
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 1; // dispersión en Z
-  }
-
-  colaGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const colaMaterial = new THREE.PointsMaterial({
-    color: 0x88ccff,
-    size: 0.1,
-    transparent: true,
-    opacity: 0.7,
-    depthWrite: false
-  });
-
-  cometaCola = new THREE.Points(colaGeometry, colaMaterial);
-  scene.add(cometaCola);
-}
-
 function animate() {
   requestAnimationFrame(animate);
 
@@ -643,27 +594,6 @@ function animate() {
       light.intensity = 0.2 + Math.sin(Date.now() * 0.005 + i) * 0.1;
     }
   });
-
-  // Cometa con órbita elíptica
-  cometaOrbitAngle += cometa.orbitaVelocidad;
-  if (cometaMesh) {
-    cometaMesh.position.set(
-      Math.cos(cometaOrbitAngle) * cometa.orbitaRadioA,
-      0,
-      Math.sin(cometaOrbitAngle) * cometa.orbitaRadioB
-    );
-    cometaMesh.rotation.y += ROTACION_VELOCIDAD;
-
-    // Calcular dirección opuesta al Sol (0,0,0)
-    const dirFromSun = new THREE.Vector3()
-      .subVectors(cometaMesh.position, new THREE.Vector3(0, 0, 0))
-      .normalize();
-
-    // Mover cola en esa dirección
-    if (cometaCola) {
-      cometaCola.position.copy(cometaMesh.position).add(dirFromSun.multiplyScalar(3));
-    }
-  }
 
   renderer.render(scene, camera);
 }
