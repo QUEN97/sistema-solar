@@ -132,6 +132,10 @@ const cinturónAsteroides = {
   velocidadMax: 0.006,
 };
 
+let orbitLines = [];
+let missionStarted = false;
+let selectedObject = null;
+let originalOrbitSpeeds = {};
 
 let controls; // ✅ Control de órbita
 let controlsEnabled = false; // Para activar/desactivar controles
@@ -154,6 +158,10 @@ let audioStarted = false;
 export function initScene() {
   const canvas = document.getElementById('scene');
   if (!canvas) return;
+
+  canvas.style.position = 'absolute';
+  canvas.style.zIndex = '1';
+  canvas.style.pointerEvents = 'auto';
 
   scene = new THREE.Scene();
 
@@ -202,6 +210,10 @@ export function initScene() {
   crearISS();
   crearCinturónAsteroides();
   crearPolvoAsteroides();
+  // Crear líneas de órbita
+  crearOrbitLines();
+  // Actualizar fecha y hora cada segundo
+  setInterval(updateDateTime, 1000);
 
   lookAtTarget.set(0, 0, 0);
   camera.lookAt(lookAtTarget);
@@ -225,7 +237,10 @@ export function initScene() {
   });
   window.addEventListener('resize', onWindowResize);
 
-  let currentIndex = 0;
+  // Agregar evento de clic
+  renderer.domElement.addEventListener('click', onClick, false);
+
+  //let currentIndex = 0;
   // window.addEventListener('wheel', e => {
   //   if (controls.enabled) return; // 📌 Si estás en control manual, no cambiar de planeta
   //   startAudio();
@@ -244,6 +259,78 @@ export function initScene() {
   // });
 
   document.body.addEventListener('click', startAudio);
+}
+
+// Nueva función para crear líneas de órbita
+function crearOrbitLines() {
+  // Limpiar órbitas existentes
+  orbitLines.forEach(line => scene.remove(line));
+  orbitLines = [];
+
+  // Crear órbitas para planetas
+  planetas.forEach(p => {
+    if (p.orbitaRadio > 0) {
+      const orbitGeometry = new THREE.BufferGeometry();
+      const points = [];
+      const segments = 64;
+
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        points.push(new THREE.Vector3(
+          Math.cos(angle) * p.orbitaRadio,
+          0,
+          Math.sin(angle) * p.orbitaRadio
+        ));
+      }
+
+      orbitGeometry.setFromPoints(points);
+      const orbitMaterial = new THREE.LineBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.3
+      });
+
+      const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+      scene.add(orbitLine);
+      orbitLines.push(orbitLine);
+    }
+  });
+
+  // Órbita de la Luna
+  if (lunaMesh) {
+    const orbitGeometry = new THREE.BufferGeometry();
+    const points = [];
+    const segments = 32;
+    const tierraIndex = planetas.findIndex(p => p.nombre === 'Tierra');
+    const tierraPos = planetMeshes[tierraIndex].position;
+
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      points.push(new THREE.Vector3(
+        tierraPos.x + Math.cos(angle) * luna.orbitaRadio,
+        0,
+        tierraPos.z + Math.sin(angle) * luna.orbitaRadio
+      ));
+    }
+
+    orbitGeometry.setFromPoints(points);
+    const orbitMaterial = new THREE.LineBasicMaterial({
+      color: 0xcccccc,
+      transparent: true,
+      opacity: 0.2
+    });
+
+    const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+    scene.add(orbitLine);
+    orbitLines.push(orbitLine);
+  }
+}
+
+// Función para actualizar fecha y hora
+function updateDateTime() {
+  const now = new Date();
+  document.getElementById('current-date').textContent = now.toLocaleDateString();
+  document.getElementById('current-time').textContent = now.toLocaleTimeString();
 }
 
 function startAudio() {
@@ -465,6 +552,42 @@ function crearPolvoAsteroides() {
 function animate() {
   requestAnimationFrame(animate);
 
+ if (!missionStarted) {
+    planetMeshes.forEach((mesh, i) => {
+      const p = planetas[i];
+      if (p.orbitaRadio > 0) {
+        planetOrbitAngles[i] += p.orbitaVelocidad;
+        mesh.position.set(
+          Math.cos(planetOrbitAngles[i]) * p.orbitaRadio,
+          0,
+          Math.sin(planetOrbitAngles[i]) * p.orbitaRadio
+        );
+      }
+    });
+
+    // Movimiento de la Luna
+    if (lunaMesh) {
+      lunaOrbitAngle += luna.orbitaVelocidad;
+      const tierraPos = planetMeshesMap.get('Tierra').position;
+      lunaMesh.position.set(
+        tierraPos.x + Math.cos(lunaOrbitAngle) * luna.orbitaRadio,
+        0,
+        tierraPos.z + Math.sin(lunaOrbitAngle) * luna.orbitaRadio
+      );
+    }
+
+    // Movimiento de la ISS
+    if (issMesh) {
+      issMesh.userData.orbitAngle += iss.orbitaVelocidad;
+      const tierraPos = planetMeshesMap.get('Tierra').position;
+      issMesh.position.set(
+        tierraPos.x + Math.cos(issMesh.userData.orbitAngle) * iss.orbitaRadio,
+        0,
+        tierraPos.z + Math.sin(issMesh.userData.orbitAngle) * iss.orbitaRadio
+      );
+    }
+  }
+
   if (!alineados) {
     planetMeshes.forEach((mesh, i) => {
       mesh.visible = true;
@@ -598,6 +721,97 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+
+// Nueva función para comenzar misión
+function comenzarMision() {
+  missionStarted = true;
+  
+  // Detener órbitas pero mantener rotación
+  planetas.forEach((p, i) => {
+    originalOrbitSpeeds[`planet_${i}`] = p.orbitaVelocidad;
+    p.orbitaVelocidad = 0; // Detener movimiento orbital
+  });
+  
+  // Detener Luna y ISS
+  if (lunaMesh) {
+    originalOrbitSpeeds.luna = luna.orbitaVelocidad;
+    luna.orbitaVelocidad = 0;
+  }
+  
+  if (issMesh) {
+    originalOrbitSpeeds.iss = iss.orbitaVelocidad;
+    iss.orbitaVelocidad = 0;
+  }
+
+  // Habilitar interacción
+  controls.enabled = true;
+  controlsEnabled = true;
+  renderer.domElement.style.pointerEvents = 'auto';
+  
+  // Actualizar UI
+  document.getElementById('comenzar-btn').style.display = 'none';
+  document.getElementById('finalizar-btn').style.display = 'block';
+  document.getElementById('explore-btn').style.display = 'none';
+  
+  // Mover cámara a vista panorámica
+  gsap.to(camera.position, {
+    duration: 2,
+    x: 0,
+    y: 15,
+    z: 60,
+    ease: 'power2.inOut'
+  });
+  
+  gsap.to(lookAtTarget, {
+    duration: 2,
+    x: 0,
+    y: 0,
+    z: 0,
+    ease: 'power2.inOut'
+  });
+}
+window.comenzarMision = comenzarMision;
+
+// Nueva función para finalizar misión
+function finalizarMision() {
+  missionStarted = false;
+  
+  // Restaurar órbitas
+  planetas.forEach((p, i) => {
+    if (originalOrbitSpeeds[`planet_${i}`] !== undefined) {
+      p.orbitaVelocidad = originalOrbitSpeeds[`planet_${i}`];
+    }
+  });
+  
+  // Restaurar Luna y ISS
+  if (lunaMesh && originalOrbitSpeeds.luna !== undefined) {
+    luna.orbitaVelocidad = originalOrbitSpeeds.luna;
+  }
+  
+  if (issMesh && originalOrbitSpeeds.iss !== undefined) {
+    iss.orbitaVelocidad = originalOrbitSpeeds.iss;
+  }
+
+  // Deshabilitar interacción
+  controls.enabled = false;
+  controlsEnabled = false;
+  renderer.domElement.style.pointerEvents = 'none';
+  
+  // Actualizar UI
+  document.getElementById('comenzar-btn').style.display = 'block';
+  document.getElementById('finalizar-btn').style.display = 'none';
+  hidePlanetInfoPanel();
+  
+  // Restaurar vista inicial
+  gsap.to(camera.position, {
+    duration: 2,
+    x: 0,
+    y: 10,
+    z: 60,
+    ease: 'power2.inOut'
+  });
+}
+
 function moveCameraToPlanet(index) {
   planetaVisitadoIndex = index;
   const isMobile = window.innerWidth < 768;
@@ -725,6 +939,289 @@ function typewriterEffect(element, text, speed = 40) {
   type();
 }
 
+// Nueva función para manejar clics
+function onClick(event) {
+  // Solo procesar clicks si la misión ha comenzado
+  if (!missionStarted || controlsEnabled) return;
+
+  event.stopPropagation(); // Evitar que el click se propague
+
+  const mouse = new THREE.Vector2(
+    (event.clientX / window.innerWidth) * 2 - 1,
+    -(event.clientY / window.innerHeight) * 2 + 1
+  );
+
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, camera);
+
+  // Incluir todos los objetos clickeables
+  const clickableObjects = [...planetMeshes];
+  if (lunaMesh) clickableObjects.push(lunaMesh);
+  if (issMesh) clickableObjects.push(issMesh);
+  if (planetMeshesMap.get('Sol')) clickableObjects.push(planetMeshesMap.get('Sol'));
+
+  const intersects = raycaster.intersectObjects(clickableObjects, true);
+
+  if (intersects.length > 0) {
+    const object = intersects[0].object;
+    selectObject(object);
+  }
+}
+
+function selectObject(object) {
+  // Limpiar selección anterior
+  if (selectedObject && selectedObject.userData.originalMaterial) {
+    selectedObject.material = selectedObject.userData.originalMaterial;
+  }
+
+  // Seleccionar nuevo objeto
+  selectedObject = object;
+  object.userData.originalMaterial = object.material.clone();
+  
+  // Aplicar efecto de selección
+  const highlightMaterial = new THREE.MeshBasicMaterial({
+    color: 0x00ffff,
+    transparent: true,
+    opacity: 0.5,
+    wireframe: true
+  });
+  object.material = highlightMaterial;
+
+  // Posicionar botón EXPLORAR
+  const exploreBtn = document.getElementById('explore-btn');
+  const vector = object.position.clone();
+  vector.project(camera);
+
+  const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+
+  exploreBtn.style.display = 'block';
+  exploreBtn.style.left = `${x}px`;
+  exploreBtn.style.top = `${y}px`;
+  exploreBtn.onclick = () => {
+    explorarObjeto(object);
+    exploreBtn.style.display = 'none';
+  };
+}
+
+// Nueva función para explorar objetos
+function explorarObjeto(object) {
+  const size = object.userData.sizeOriginal || 1;
+  const distanceFactor = 3;
+  const offset = size * distanceFactor;
+
+  controls.enabled = false;
+  controlsEnabled = false;
+
+  gsap.to(camera.position, {
+    duration: 2,
+    x: object.position.x - offset,
+    y: size * 1.5,
+    z: object.position.z + offset,
+    ease: 'power2.inOut',
+    onComplete: () => {
+      controls.target.copy(object.position);
+      mostrarInformacionObjeto(object);
+    }
+  });
+
+  gsap.to(lookAtTarget, {
+    duration: 2,
+    x: object.position.x,
+    y: object.position.y,
+    z: object.position.z,
+    ease: 'power2.inOut'
+  });
+}
+
+// Nueva función para mostrar información
+function mostrarInformacionObjeto(object) {
+  const infoPanel = document.getElementById('planet-info-panel');
+  const funfactsPanel = document.getElementById('planet-funfacts-panel');
+  
+  if (object === lunaMesh) {
+    showMoonInfo();
+  } else if (object === issMesh) {
+    showISSInfo();
+  } else {
+    const index = planetMeshes.indexOf(object);
+    if (index !== -1) {
+      showPlanetInfoPanel(index);
+    }
+  }
+  
+  // Ocultar botón EXPLORAR
+  document.getElementById('explore-btn').style.display = 'none';
+}
+
+// Reducir velocidad orbital del objeto seleccionado
+function reduceOrbitSpeed(object) {
+  // Guardar velocidades originales
+  if (object === lunaMesh) {
+    originalOrbitSpeeds.luna = luna.orbitaVelocidad;
+    luna.orbitaVelocidad *= 0.2; // Reducir a 20% de velocidad
+  }
+  else if (object === issMesh) {
+    originalOrbitSpeeds.iss = iss.orbitaVelocidad;
+    iss.orbitaVelocidad *= 0.2;
+  }
+  else {
+    const index = planetMeshes.indexOf(object);
+    if (index !== -1) {
+      originalOrbitSpeeds.planet = planetas[index].orbitaVelocidad;
+      planetas[index].orbitaVelocidad *= 0.2;
+    }
+  }
+}
+
+// Restaurar velocidad orbital
+function restoreOrbitSpeed() {
+  if (!selectedObject) return;
+
+  // Restaurar material original si existe
+  if (selectedObject.userData.originalMaterial) {
+    selectedObject.material = selectedObject.userData.originalMaterial;
+  }
+
+  // Restaurar velocidad orbital
+  if (selectedObject === lunaMesh) {
+    luna.orbitaVelocidad = originalOrbitSpeeds.luna;
+  }
+  else if (selectedObject === issMesh) {
+    iss.orbitaVelocidad = originalOrbitSpeeds.iss;
+  }
+  else {
+    const index = planetMeshes.indexOf(selectedObject);
+    if (index !== -1) {
+      planetas[index].orbitaVelocidad = originalOrbitSpeeds.planet;
+    }
+  }
+
+  selectedObject = null;
+  hideExploreButton();
+}
+
+// Mostrar botón de explorar
+function showExploreButton(object) {
+  const exploreBtn = document.getElementById('explore-btn');
+  if (!exploreBtn) return;
+
+  // Posicionar el botón cerca del objeto en pantalla
+  const vector = new THREE.Vector3();
+  vector.setFromMatrixPosition(object.matrixWorld);
+  vector.project(camera);
+
+  const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+
+  exploreBtn.style.display = 'block';
+  exploreBtn.style.left = `${x}px`;
+  exploreBtn.style.top = `${y}px`;
+
+  // Asignar evento
+  exploreBtn.onclick = () => {
+    if (object === lunaMesh) {
+      exploreLuna();
+    } else if (object === issMesh) {
+      exploreISS();
+    } else {
+      const index = planetMeshes.indexOf(object);
+      if (index !== -1) {
+        if (planetas[index].nombre === 'Saturno') {
+          explorarSaturno(index);
+        } else {
+          moveCameraClose(index);
+        }
+      }
+    }
+    hideExploreButton();
+  };
+}
+
+// Ocultar botón de explorar
+function hideExploreButton() {
+  const exploreBtn = document.getElementById('explore-btn');
+  if (exploreBtn) exploreBtn.style.display = 'none';
+}
+
+// Funciones de exploración específicas
+function exploreLuna() {
+  const tierraIndex = planetas.findIndex(p => p.nombre === 'Tierra');
+  const tierraPos = planetMeshes[tierraIndex].position;
+
+  gsap.to(camera.position, {
+    duration: 2,
+    x: tierraPos.x + luna.orbitaRadio * 0.8,
+    y: luna.tamaño * 2,
+    z: tierraPos.z + luna.orbitaRadio * 0.8,
+    ease: 'power3.inOut',
+    onComplete: () => {
+      controls.target.copy(lunaMesh.position);
+      controls.enabled = true;
+      controlsEnabled = true;
+      showMoonInfo();
+    }
+  });
+}
+
+function exploreISS() {
+  const tierraIndex = planetas.findIndex(p => p.nombre === 'Tierra');
+  const tierraPos = planetMeshes[tierraIndex].position;
+
+  gsap.to(camera.position, {
+    duration: 1.5,
+    x: tierraPos.x + iss.orbitaRadio * 0.6,
+    y: iss.tamaño * 10,
+    z: tierraPos.z + iss.orbitaRadio * 0.6,
+    ease: 'power2.inOut',
+    onComplete: () => {
+      controls.target.copy(issMesh.position);
+      controls.enabled = true;
+      controlsEnabled = true;
+      showISSInfo();
+    }
+  });
+}
+
+// Funciones para mostrar información
+function showMoonInfo() {
+  const infoPanel = document.getElementById('planet-info-panel');
+  if (!infoPanel) return;
+
+  infoPanel.className = 'moon-panel';
+  infoPanel.innerHTML = `
+    <h2 class="special-panel-title">LUNA</h2>
+    <p><strong>Diámetro:</strong> 3,474 km</p>
+    <p><strong>Distancia Tierra:</strong> 384,400 km</p>
+    <p><strong>Temperatura:</strong> -173°C a 127°C</p>
+    <p><strong>Gravedad:</strong> 1.62 m/s² (16.5% de la Tierra)</p>
+    <p style="margin-top:15px;">Único satélite natural de la Tierra y el quinto más grande del sistema solar.</p>
+    <button onclick="hidePlanetInfoPanel()" class="hud-btn" style="margin-top:20px;">CERRAR</button>
+  `;
+
+  infoPanel.style.display = 'block';
+  gsap.from(infoPanel, { duration: 0.8, x: 50, opacity: 0, ease: "power3.out" });
+}
+
+function showISSInfo() {
+  const infoPanel = document.getElementById('planet-info-panel');
+  if (!infoPanel) return;
+
+  infoPanel.className = 'iss-panel';
+  infoPanel.innerHTML = `
+    <h2 class="special-panel-title">ESTACIÓN ESPACIAL INTERNACIONAL</h2>
+    <p><strong>Altura:</strong> ~400 km</p>
+    <p><strong>Velocidad:</strong> 27,600 km/h</p>
+    <p><strong>Órbita:</strong> 90 minutos por vuelta</p>
+    <p><strong>Tripulación:</strong> 7 astronautas</p>
+    <p style="margin-top:15px;">Laboratorio orbital que completa 16 vueltas a la Tierra cada día.</p>
+    <button onclick="hidePlanetInfoPanel()" class="hud-btn" style="margin-top:20px;">CERRAR</button>
+  `;
+
+  infoPanel.style.display = 'block';
+  gsap.from(infoPanel, { duration: 0.8, x: 50, opacity: 0, ease: "power3.out" });
+}
+
 function showPlanetInfoPanel(index) {
   const infoPanel = document.getElementById('planet-info-panel');
   const funfactsPanel = document.getElementById('planet-funfacts-panel');
@@ -815,39 +1312,21 @@ function explorarSaturno(index) {
 // HUD
 export function hudController() {
   return {
-    mensaje: "Bienvenido a la misión",
-    index: 0,
-    planetas,
-    get planeta() { return this.planetas[this.index].nombre; },
-    get distancia() { return this.planetas[this.index].distancia; },
-    get temperatura() { return this.planetas[this.index].temperatura; },
-    explorar() {
-      window.dispatchEvent(new CustomEvent('explorarPlaneta', { detail: this.index }));
+    mensaje: "Exploración del Sistema Solar",
+    comenzarMision() {
+      comenzarMision();
     },
-    continuar() {
-      if (this.index < this.planetas.length - 1) {
-        this.index++;
-        window.dispatchEvent(new CustomEvent('cambiarPlaneta', { detail: this.index }));
-      }
-    },
-    retroceder() {
-      if (this.index > 0) {
-        this.index--;
-        window.dispatchEvent(new CustomEvent('cambiarPlaneta', { detail: this.index }));
-      }
-    },
-    ocultarPanel() {
-      hidePlanetInfoPanel();
-      hideFunFactsPanel();
+    finalizarMision() {
+      finalizarMision();
     },
     init() {
       initScene();
-      window.addEventListener('cambiarPlaneta', e => {
-        this.index = e.detail;
-        this.ocultarPanel();
-      });
-    },
-
+      updateDateTime();
+      
+      // Forzar el orden z-index al iniciar
+      document.getElementById('scene').style.zIndex = '1';
+      document.querySelector('.hud-container').style.zIndex = '2';
+    }
   };
 }
 window.hudController = hudController;

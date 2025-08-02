@@ -94,6 +94,9 @@ button:hover {
   height: 100%;
   background: radial-gradient(circle at center, #020d1f 0%, #000000 100%);
    filter: brightness(1.1) contrast(1.2);
+   position: absolute;
+  z-index: 1;
+  pointer-events: auto; 
 }
 
 /* === Reflejo del visor del casco con animación === */
@@ -202,6 +205,9 @@ button:hover {
 .hud-container {
   transition: transform 0.1s ease-out;
   transform-style: preserve-3d;
+  position: absolute;
+  z-index: 2;
+  pointer-events: none; 
 }
 
 /* === Botones estilo militar === */
@@ -215,6 +221,9 @@ button:hover {
   letter-spacing: 1px;
   border-radius: 0.5rem;
   transition: all 0.3s ease;
+  pointer-events: auto !important; /* Esto es crucial */
+  position: relative; /* Asegura que respete el z-index */
+  z-index: 10;
 }
 
 .hud-btn:hover {
@@ -226,4 +235,103 @@ button:hover {
 .hud-btn:active {
   transform: scale(0.95);
   box-shadow: 0 0 5px cyan inset;
+}
+
+/* === BOTÓN EXPLORAR MEJORADO === */
+#explore-btn {
+  position: absolute;
+  z-index: 100;
+   pointer-events: auto;
+  background: rgba(0, 15, 30, 0.9);
+  color: #00f0ff;
+  border: 2px solid #00f0ff;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+  backdrop-filter: blur(5px);
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: exploreBtnFadeIn 0.5s ease-out forwards;
+}
+
+#explore-btn:hover {
+  background: rgba(0, 50, 80, 0.9);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+@keyframes exploreBtnFadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* === EFECTOS DE SELECCIÓN DE PLANETA === */
+.planet-selected {
+  animation: planetPulse 2s infinite ease-in-out;
+  filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.7));
+}
+
+@keyframes planetPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* === ANIMACIONES DE TRANSICIÓN MEJORADAS === */
+.gsap-transition {
+  transition: all 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* === PANELES DE INFORMACIÓN PARA LUNA/ISS === */
+.iss-panel {
+  border-color: rgba(100, 200, 255, 0.7) !important;
+  background: rgba(0, 50, 100, 0.2) !important;
+}
+
+.moon-panel {
+  border-color: rgba(200, 200, 200, 0.7) !important;
+  background: rgba(100, 100, 150, 0.2) !important;
+}
+
+.special-panel-title {
+  position: relative;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.special-panel-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+}
+
+#current-date, #current-time {
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 1px;
+}
+
+#comenzar-btn, #finalizar-btn {
+  min-width: 180px;
+  font-size: 1.1rem;
+  padding: 12px 24px;
+}
+
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px cyan; }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px cyan; }
+}
+
+/* Asegúrate que los paneles de información tengan alto z-index */
+#planet-info-panel, #planet-funfacts-panel {
+  z-index: 200 !important;
 }

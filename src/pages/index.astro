@@ -19,104 +19,52 @@ import { hudController } from "../components/SceneClient.js";
 
 	<body class="bg-black text-white min-h-screen overflow-hidden relative">
 		<!-- Escena 3D -->
-		<Scene client:load />
+		<Scene client:load style="position: absolute; z-index: 1;"/>
 
 		<!-- HUD estilo visor de casco -->
 		<div
-			class="hud-container absolute top-0 left-0 w-full h-full flex flex-col justify-between p-6 pointer-events-none"
+			class="hud-container absolute top-0 left-0 w-full h-full flex flex-col justify-between p-6"
+			style="z-index: 2;"
 			x-data="hudController()"
 			x-init="init()"
 		>
-			<!-- Reflejo del visor -->
+			<!-- Reflejo y marco -->
 			<div class="helmet-reflection"></div>
-
-			<!-- Marco del casco -->
 			<div class="hud-frame"></div>
 
-			<!-- Parte superior: Mensaje -->
-			<div
-				class="flex justify-between items-center animate-fadeIn pointer-events-auto"
-			>
+			<!-- Parte superior: Fecha y Hora -->
+			<div class="flex justify-between items-center">
 				<div class="hud-box">
-					<h1 class="hud-title" x-text="mensaje"></h1>
+					<p class="hud-label">
+						FECHA: <span id="current-date" class="hud-value"></span>
+					</p>
 				</div>
-
-				<!-- Datos planeta -->
-				<div class="hud-box text-right">
+				<div class="hud-box">
 					<p class="hud-label">
-						PLANETA: <span class="hud-value" x-text="planeta"
-						></span>
-					</p>
-					<p class="hud-label">
-						DISTANCIA: <span class="hud-value" x-text="distancia"
-						></span>
-					</p>
-					<p class="hud-label">
-						TEMP: <span class="hud-value" x-text="temperatura"
-						></span>
+						HORA: <span id="current-time" class="hud-value"></span>
 					</p>
 				</div>
 			</div>
 
-			<!-- Botones -->
-			<div
-				class="flex justify-center gap-6 pb-10 animate-fadeIn pointer-events-auto"
+			<!-- Botón principal -->
+			<div class="flex justify-center pb-10">
+				<button
+					@click="comenzarMision()"
+					id="comenzar-btn"
+					class="hud-btn" style="pointer-events: auto;">COMENZAR</button
+				>
+				<button
+					@click="finalizarMision()"
+					id="finalizar-btn"
+					class="hud-btn" 
+					style="display: none;">FINALIZAR</button
+				>
+			</div>
+
+			<!-- Botón de explorar -->
+			<button id="explore-btn" style="display: none;" class="hud-btn"
+				>EXPLORAR</button
 			>
-				<button @click="explorar()" class="hud-btn">EXPLORAR</button>
-				<button @click="continuar()" class="hud-btn">CONTINUAR</button>
-				<button @click="retroceder()" class="hud-btn">ATRÁS</button>
-			</div>
 		</div>
-		<aside
-			id="planet-info-panel"
-			style="display:none; position: fixed; top: 10%; right: 2%; width: 300px; background: rgba(0,255,255,0.1); border: 1px solid cyan; border-radius: 12px; padding: 20px; color: cyan; z-index: 20; font-family: 'Orbitron', sans-serif;"
-		>
-			<h2
-				class="planet-name"
-				style="font-size:1.8rem; font-weight:bold; margin-bottom:10px;"
-			>
-			</h2>
-			<p>
-				<strong>Distancia:</strong>
-				<span class="planet-distance"></span>
-			</p>
-			<p>
-				<strong>Temperatura:</strong>
-				<span class="planet-temp"></span>
-			</p>
-			<p
-				class="planet-extra"
-				style="margin-top: 15px; font-size: 0.9rem; line-height: 1.3;"
-			>
-			</p>
-
-			<button
-				onclick="hidePlanetInfoPanel()"
-				style="margin-top: 20px; padding: 8px 12px; background: transparent; border: 1px solid cyan; border-radius: 8px; color: cyan; font-weight: bold; cursor:pointer;"
-			>
-				Cerrar
-			</button>
-		</aside>
-		<aside
-			id="planet-funfacts-panel"
-			style="display:none; position: fixed; top: 10%; left: 2%; width: 300px; background: rgba(255,255,0,0.1); border: 1px solid yellow; border-radius: 12px; padding: 20px; color: yellow; z-index: 20; font-family: 'Orbitron', sans-serif; opacity: 0; transform: translateX(-50px);"
-		>
-			<h2 style="font-size:1.5rem; font-weight:bold; margin-bottom:10px;">
-				Datos Curiosos
-			</h2>
-			<p
-				class="planet-funfact"
-				style="font-size:0.9rem; line-height:1.4;"
-			>
-			</p>
-
-			<button
-				onclick="hideFunFactsPanel()"
-				style="margin-top: 20px; padding: 8px 12px; background: transparent; border: 1px solid yellow; border-radius: 8px; color: yellow; font-weight: bold; cursor:pointer;"
-			>
-				Cerrar
-			</button>
-		</aside>
-		
 	</body>
 </html>
