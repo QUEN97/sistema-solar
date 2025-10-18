@@ -18,52 +18,124 @@ import { hudController } from "../components/SceneClient.js";
 	</head>
 
 	<body class="bg-black text-white min-h-screen overflow-hidden relative">
-		<!-- Escena 3D -->
-		<Scene client:load style="position: absolute; z-index: 1;"/>
+		<!-- Escena 3D del sistema solar -->
+		<Scene client:load style="position: absolute; z-index: 1;" />
 
-		<!-- HUD estilo visor de casco -->
-		<div
-			class="hud-container absolute top-0 left-0 w-full h-full flex flex-col justify-between p-6"
-			style="z-index: 2;"
-			x-data="hudController()"
-			x-init="init()"
-		>
-			<!-- Reflejo y marco -->
-			<div class="helmet-reflection"></div>
-			<div class="hud-frame"></div>
+		<!-- Cabina de Nave Espacial -->
+		<div class="spaceship-cockpit" x-data="hudController()" x-init="init()">
+			<!-- Marco perimetral sutil -->
+			<div class="cockpit-frame"></div>
 
-			<!-- Parte superior: Fecha y Hora -->
-			<div class="flex justify-between items-center">
-				<div class="hud-box">
-					<p class="hud-label">
-						FECHA: <span id="current-date" class="hud-value"></span>
-					</p>
-				</div>
-				<div class="hud-box">
-					<p class="hud-label">
-						HORA: <span id="current-time" class="hud-value"></span>
-					</p>
+			<!-- Reloj de Navegación Estelar (Esquina superior izquierda) -->
+			<div class="stellar-clock">
+				<div class="clock-display">
+					<div class="stellar-date" id="current-date">--/--/----</div>
+					<div class="stellar-time" id="current-time">--:--:--</div>
 				</div>
 			</div>
 
-			<!-- Botón principal -->
-			<div class="flex justify-center pb-10">
-				<button
-					@click="comenzarMision()"
-					id="comenzar-btn"
-					class="hud-btn" style="pointer-events: auto;">COMENZAR</button
-				>
-				<button
-					@click="finalizarMision()"
-					id="finalizar-btn"
-					class="hud-btn" 
-					style="display: none;">FINALIZAR</button
-				>
+			<!-- Consola de Navegación (Esquina superior derecha) -->
+			<div class="navigation-console">
+				<h3 class="text-cyan-300 text-center text-sm mb-2">
+					RADAR SISTEMA SOLAR
+				</h3>
+				<div class="radar-display">
+					<div class="radar-sweep"></div>
+					<!-- Los blips del radar se generan dinámicamente -->
+				</div>
+
+				<div class="systems-panel">
+					<div class="system-indicator">
+						<div class="system-label">PROPULSIÓN</div>
+						<div class="system-status">
+							<span class="status-light status-online"
+							></span>ONLINE
+						</div>
+					</div>
+					<div class="system-indicator">
+						<div class="system-label">NAVEGACIÓN</div>
+						<div class="system-status">
+							<span class="status-light status-online"
+							></span>ACTIVA
+						</div>
+					</div>
+					<div class="system-indicator">
+						<div class="system-label">ESCUDOS</div>
+						<div class="system-status">
+							<span class="status-light status-warning"></span>85%
+						</div>
+					</div>
+					<div class="system-indicator">
+						<div class="system-label">SENSORES</div>
+						<div class="system-status">
+							<span class="status-light status-online"></span>100%
+						</div>
+					</div>
+				</div>
 			</div>
 
+			<!-- Panel de Control Principal (Centro inferior) -->
+			<div class="control-panel">
+				<!-- Botones de misión -->
+				<div class="control-buttons">
+					<button
+						@click="comenzarMision()"
+						id="comenzar-btn"
+						class="cockpit-btn">INICIAR MISIÓN</button
+					>
+					<button
+						@click="finalizarMision()"
+						id="finalizar-btn"
+						class="cockpit-btn"
+						style="display: none;">FINALIZAR</button
+					>
+				</div>
+
+				<!-- Consola inferior -->
+				<div class="lower-console">
+					<div class="engine-status">
+						<span class="text-cyan-200 text-xs">ENERGÍA:</span>
+						<div class="power-indicator">
+							<div class="power-level" style="width: 75%;"></div>
+						</div>
+						<span class="text-cyan-200 text-xs">75%</span>
+					</div>
+
+					<div class="text-cyan-200 text-xs">
+						<span class="status-light status-online"></span>
+						SISTEMA ESTABLE
+					</div>
+				</div>
+			</div>
+
+			<!-- Panel de Alertas -->
+			<div class="alert-panel" style="display: none;" id="alert-panel">
+				<div class="alert-message">
+					ALERTA: SISTEMA EN MODO EXPLORACIÓN
+				</div>
+			</div>
 			<!-- Botón de explorar -->
-			<button id="explore-btn" style="display: none;" class="hud-btn"
-				>EXPLORAR</button
+			<button id="explore-btn" style="display: none;">EXPLORAR</button>
+		</div>
+
+		<!-- Paneles de información -->
+		<div
+			id="planet-info-panel"
+			class="fixed right-4 top-1/2 transform -translate-y-1/2 bg-gray-900 bg-opacity-90 border border-cyan-400 rounded-lg p-6 w-80"
+			style="display: none; z-index: 200; backdrop-filter: blur(10px);"
+		>
+			<!-- El contenido se llena dinámicamente -->
+		</div>
+
+		<div
+			id="planet-funfacts-panel"
+			class="fixed left-4 top-1/2 transform -translate-y-1/2 bg-gray-900 bg-opacity-90 border border-cyan-400 rounded-lg p-6 w-80"
+			style="display: none; z-index: 200; backdrop-filter: blur(10px);"
+		>
+			<h3 class="text-cyan-300 text-lg font-bold mb-4">DATO CURIOSO</h3>
+			<p class="planet-funfact text-cyan-100 text-sm leading-relaxed"></p>
+			<button onclick="hidePlanetInfoPanel()" class="hud-btn mt-6 w-full"
+				>CERRAR</button
 			>
 		</div>
 	</body>

@@ -128,8 +128,8 @@ button:hover {
 
   background: url('/textures/scratch.png') repeat;
   background-size: cover;
-  opacity: 0.06;
-  animation: visorDistortion 8s linear infinite;
+  opacity: 0.20;
+  animation: visorDistortion 10s linear infinite;
 }
 
 .helmet-reflection::before {
@@ -223,7 +223,7 @@ button:hover {
   transition: all 0.3s ease;
   pointer-events: auto !important; /* Esto es crucial */
   position: relative; /* Asegura que respete el z-index */
-  z-index: 10;
+  z-index: 210;
 }
 
 .hud-btn:hover {
@@ -239,36 +239,65 @@ button:hover {
 
 /* === BOTÓN EXPLORAR MEJORADO === */
 #explore-btn {
-  position: absolute;
-  z-index: 100;
-   pointer-events: auto;
-  background: rgba(0, 15, 30, 0.9);
-  color: #00f0ff;
-  border: 2px solid #00f0ff;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-family: 'Orbitron', sans-serif;
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
-  backdrop-filter: blur(5px);
-  transform: translate(-50%, -50%);
-  transition: all 0.3s ease;
-  opacity: 0;
-  animation: exploreBtnFadeIn 0.5s ease-out forwards;
+  position: fixed !important;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+  
+  /* Tamaño más compacto */
+  background: linear-gradient(135deg, #002244, #004488) !important;
+  border: 1px solid #00f0ff !important;
+  color: #00f0ff !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: bold !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+  font-size: 0.7rem !important;
+  min-width: auto !important;
+  
+  /* Efectos más sutiles */
+  box-shadow: 
+    0 0 15px rgba(0, 240, 255, 0.6),
+    0 0 30px rgba(0, 240, 255, 0.3) !important;
+  backdrop-filter: blur(8px) !important;
+  
+  /* Transformación para centrar */
+  transform: translate(-50%, -50%) !important;
+  
+  /* Transición suave */
+  transition: all 0.3s ease !important;
+  
+  /* Animación de entrada */
+  animation: exploreBtnFadeIn 0.4s ease-out forwards !important;
+  
+  /* Asegurar que sea visible pero discreto */
+  opacity: 1 !important;
+  display: none;
 }
 
 #explore-btn:hover {
-  background: rgba(0, 50, 80, 0.9);
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
-  transform: translate(-50%, -50%) scale(1.1);
+  background: linear-gradient(135deg, #003366, #0055aa) !important;
+  border: 1px solid #00ffff !important;
+  box-shadow: 
+    0 0 20px rgba(0, 255, 255, 0.8),
+    0 0 40px rgba(0, 255, 255, 0.4) !important;
+  transform: translate(-50%, -50%) scale(1.05) !important;
+}
+
+#explore-btn:active {
+  transform: translate(-50%, -50%) scale(0.95) !important;
 }
 
 @keyframes exploreBtnFadeIn {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.8); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1); 
+  }
 }
 
 /* === EFECTOS DE SELECCIÓN DE PLANETA === */
@@ -333,5 +362,343 @@ button:hover {
 
 /* Asegúrate que los paneles de información tengan alto z-index */
 #planet-info-panel, #planet-funfacts-panel {
-  z-index: 200 !important;
+  background: rgba(0, 20, 40, 0.95) !important;
+  border: 2px solid rgba(0, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  padding: 1.5rem !important;
+  border-radius: 1rem !important;
+  max-width: 350px !important;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3) !important;
+  pointer-events: auto !important;
+  z-index: 1000 !important;
+}
+
+#planet-info-panel h2, #planet-funfacts-panel h3 {
+  color: #00f0ff !important;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5) !important;
+}
+
+
+
+
+/* === VISTA INTERIOR DE NAVE ESPACIAL === */
+.spaceship-cockpit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Marco perimetral sutil */
+.cockpit-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 8px solid transparent;
+  border-image: linear-gradient(45deg, rgba(0, 100, 200, 0.3), rgba(0, 50, 100, 0.2), rgba(0, 100, 200, 0.3)) 1;
+  background: 
+    linear-gradient(90deg, transparent 98%, rgba(0, 100, 200, 0.1) 100%),
+    linear-gradient(180deg, transparent 98%, rgba(0, 100, 200, 0.1) 100%);
+  z-index: 1;
+}
+
+/* Panel de control compacto en la parte inferior */
+.control-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  height: auto;
+  background: linear-gradient(to top, rgba(0, 20, 40, 0.9), rgba(0, 10, 20, 0.85));
+  border: 2px solid rgba(0, 150, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(15px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+}
+
+/* Consola de navegación lateral derecha */
+.navigation-console {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 250px;
+  height: 300px;
+  background: rgba(0, 15, 30, 0.85);
+  border: 2px solid rgba(0, 150, 255, 0.5);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  box-shadow: 0 0 20px rgba(0, 150, 255, 0.2);
+}
+
+/* Radar compacto */
+.radar-display {
+  flex: 1;
+  background: radial-gradient(circle, rgba(0, 30, 60, 0.4) 0%, rgba(0, 10, 20, 0.8) 70%);
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.radar-sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(0, 200, 255, 0.1) 10deg,
+    transparent 20deg
+  );
+  animation: radarSweep 3s linear infinite;
+}
+
+/* Reloj de navegación estelar compacto */
+.stellar-clock {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 15, 30, 0.85);
+  border: 2px solid rgba(0, 150, 255, 0.6);
+  border-radius: 10px;
+  padding: 0.8rem;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  min-width: 180px;
+}
+
+.clock-display {
+  font-family: 'Orbitron', monospace;
+  text-align: center;
+}
+
+.stellar-date {
+  font-size: 0.8rem;
+  color: rgba(0, 200, 255, 0.9);
+  margin-bottom: 0.3rem;
+}
+
+.stellar-time {
+  font-size: 1.1rem;
+  color: #00ffaa;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(0, 255, 170, 0.5);
+}
+
+/* Sistemas panel compacto */
+.systems-panel {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.system-indicator {
+  background: rgba(0, 20, 40, 0.6);
+  border: 1px solid rgba(0, 150, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.system-label {
+  font-size: 0.65rem;
+  color: rgba(0, 200, 255, 0.7);
+  margin-bottom: 0.2rem;
+}
+
+.system-status {
+  font-size: 0.7rem;
+  color: #00ff88;
+  font-weight: bold;
+}
+
+/* Botones compactos */
+.cockpit-btn {
+  background: linear-gradient(135deg, #002244, #004488);
+  border: 1px solid rgba(0, 150, 255, 0.6);
+  border-radius: 6px;
+  color: #00ccff;
+  padding: 0.6rem 1rem;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+/* Consola inferior compacta */
+.lower-console {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(0, 150, 255, 0.3);
+}
+
+.engine-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.power-indicator {
+  width: 80px;
+  height: 6px;
+  background: rgba(0, 50, 100, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.power-level {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88, #00ccff);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Botones en fila para el panel de control */
+.control-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+/* Alertas compactas */
+.alert-panel {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 0, 0, 0.9);
+  border: 1px solid rgba(255, 50, 50, 0.6);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  backdrop-filter: blur(10px);
+  z-index: 15;
+  animation: alertPulse 3s infinite;
+  max-width: 300px;
+  text-align: center;
+}
+
+.alert-message {
+  color: #ff6666;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Efectos de partículas en cabina */
+.cockpit-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(0, 200, 255, 0.6);
+  border-radius: 50%;
+  animation: float 20s infinite linear;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(100px);
+    opacity: 0;
+  }
+}
+
+/* Mejorar visibilidad del radar */
+.radar-blip {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #00ff96;
+  border-radius: 50%;
+  animation: blipPulse 2s infinite;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px currentColor;
+}
+
+@keyframes blipPulse {
+  0%, 100% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 0.8; 
+  }
+  50% { 
+    transform: translate(-50%, -50%) scale(1.5); 
+    opacity: 0.4; 
+  }
+}
+
+/* Indicadores luminosos */
+.status-light {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  animation: statusPulse 2s infinite;
+}
+
+.status-online { background: #00ff88; }
+.status-warning { background: #ffaa00; }
+.status-critical { background: #ff4444; }
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes alertPulse {
+  0%, 100% { border-color: rgba(255, 50, 50, 0.6); }
+  50% { border-color: rgba(255, 100, 100, 1); }
+}
+
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
