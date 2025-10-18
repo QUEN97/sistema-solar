@@ -1409,10 +1409,13 @@ function explorarObjeto(object) {
   const isMobile = window.innerWidth < 768;
   
   try {
-    // Calcular posición de cámara basada en el tipo de objeto
-    let targetPosition;
+    // Obtener posición mundial del objeto
     const objectWorldPos = new THREE.Vector3();
     object.getWorldPosition(objectWorldPos);
+
+    // Calcular posición de cámara basada en el tipo de objeto
+    let targetPosition;
+    let lookAtPosition = objectWorldPos.clone();
 
     if (planetIndex !== -1 && planetas[planetIndex]?.nombre === 'Saturno') {
       // Vista especial para Saturno para ver los anillos
@@ -1423,8 +1426,26 @@ function explorarObjeto(object) {
         objectWorldPos.z
       );
       console.log('🪐 Vista especial para Saturno');
+    } else if (esISS) {
+      // Vista especial para la ISS - más cercana y con mejor ángulo
+      const distance = isMobile ? 3 : 4;
+      targetPosition = new THREE.Vector3(
+        objectWorldPos.x - distance,
+        objectWorldPos.y + distance * 0.5,
+        objectWorldPos.z + distance * 0.3
+      );
+      console.log('🛰️ Vista especial para ISS');
+    } else if (esLuna) {
+      // Vista para la Luna
+      const distance = isMobile ? size * 4 : size * 5;
+      targetPosition = new THREE.Vector3(
+        objectWorldPos.x - distance,
+        objectWorldPos.y + size * 0.5,
+        objectWorldPos.z + distance * 0.5
+      );
+      console.log('🌙 Vista para Luna');
     } else {
-      // Vista normal para otros objetos
+      // Vista normal para planetas
       const distance = isMobile ? size * 3 : size * 4;
       targetPosition = new THREE.Vector3(
         objectWorldPos.x - distance,
@@ -1434,12 +1455,16 @@ function explorarObjeto(object) {
     }
 
     console.log('🎥 Moviendo cámara de:', camera.position, 'a:', targetPosition);
+    console.log('🎯 Objetivo de mirada:', lookAtPosition);
 
     // Deshabilitar controles temporalmente
     controls.enabled = false;
     controlsEnabled = false;
 
-    // Animación de acercamiento de cámara
+    // Configurar el objetivo de la cámara
+    controls.target.copy(lookAtPosition);
+
+    // Animación de acercamiento de cámara - MÁS SUAVE Y DIRECTO
     gsap.to(camera.position, {
       duration: 2.5,
       x: targetPosition.x,
@@ -1447,20 +1472,30 @@ function explorarObjeto(object) {
       z: targetPosition.z,
       ease: 'power2.inOut',
       onUpdate: () => {
-        // Actualizar el lookAt durante la animación
-        camera.lookAt(objectWorldPos);
+        // Mantener la mirada en el objeto durante toda la animación
+        camera.lookAt(lookAtPosition);
+        controls.target.copy(lookAtPosition);
       },
       onComplete: () => {
         console.log('✅ Cámara posicionada - mostrando información');
         
         // Configurar controles para el objeto
-        controls.target.copy(objectWorldPos);
+        controls.target.copy(lookAtPosition);
         controls.enabled = true;
         controlsEnabled = true;
         
         // Mostrar información del objeto
         mostrarInformacionObjeto(object);
       }
+    });
+
+    // Animación paralela del lookAt target para mayor suavidad
+    gsap.to(lookAtTarget, {
+      duration: 2.5,
+      x: lookAtPosition.x,
+      y: lookAtPosition.y,
+      z: lookAtPosition.z,
+      ease: 'power2.inOut'
     });
 
   } catch (error) {
@@ -1475,50 +1510,38 @@ function explorarObjeto(object) {
  */
 function mostrarSoloPlanetaSeleccionado(object) {
   console.log('👁️ Mostrando solo objeto seleccionado:', object);
-  console.log('🔍 Tipo:', object.userData?.nombre || object.userData?.tipo || 'Planeta');
   
-  // Ocultar todos los planetas primero
+  // Ocultar TODOS los objetos primero
   planetMeshes.forEach(mesh => {
     mesh.visible = false;
   });
+  if (lunaMesh) lunaMesh.visible = false;
+  if (issMesh) issMesh.visible = false;
+  if (saturnRings) saturnRings.visible = false;
   
-  // Determinar el tipo de objeto
+  // Determinar el tipo de objeto y mostrar solo lo necesario
   const esLuna = object === lunaMesh || object.userData?.nombre === 'Luna';
   const esISS = object === issMesh || object.userData?.esISS || object.userData?.tipo === 'iss';
   
-  // Mostrar solo el objeto seleccionado
   if (esLuna) {
-    // Si es la Luna, mostrar también la Tierra
+    // Mostrar Luna y Tierra
     const tierraMesh = planetMeshesMap.get('Tierra');
-    if (tierraMesh) {
-      tierraMesh.visible = true;
-      console.log('🌍 Tierra visible para contexto lunar');
-    }
+    if (tierraMesh) tierraMesh.visible = true;
     if (lunaMesh) lunaMesh.visible = true;
   } 
   else if (esISS) {
-    // Si es la ISS, mostrar también la Tierra
+    // Mostrar ISS y Tierra
     const tierraMesh = planetMeshesMap.get('Tierra');
-    if (tierraMesh) {
-      tierraMesh.visible = true;
-      console.log('🌍 Tierra visible para contexto ISS');
-    }
+    if (tierraMesh) tierraMesh.visible = true;
     if (issMesh) issMesh.visible = true;
   } 
   else {
-    // Si es un planeta, mostrar solo ese planeta
+    // Mostrar solo el planeta seleccionado
     object.visible = true;
-    console.log('🪐 Planeta principal visible');
-  }
-  
-  // Mostrar anillos de Saturno si es Saturno
-  if (saturnRings) {
-    const saturnoMesh = planetMeshesMap.get('Saturno');
-    if (object === saturnoMesh) {
+    
+    // Mostrar anillos si es Saturno
+    if (object === planetMeshesMap.get('Saturno') && saturnRings) {
       saturnRings.visible = true;
-      console.log('💍 Anillos de Saturno visibles');
-    } else {
-      saturnRings.visible = false;
     }
   }
 }
