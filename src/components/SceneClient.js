@@ -216,7 +216,13 @@ export function initScene() {
   // Crear todos los elementos del sistema solar
   crearPlanetas();
   crearLuna();
-  crearISS();
+  crearISS().then(() => {
+    console.log('🚀 ISS completamente inicializada');
+    // Verificar duplicados después de cargar
+    setTimeout(verificarDuplicados, 1000);
+  }).catch(error => {
+    console.error('❌ Error al cargar ISS:', error);
+  });
   crearCinturónAsteroides();
   crearPolvoAsteroides();
   crearOrbitLines();
@@ -460,6 +466,8 @@ function crearISS() {
 
         // Posición inicial en órbita terrestre
         issMesh.position.set(iss.orbitaRadio, 0, 0);
+
+        issMesh.userData = issMesh.userData || {};
         issMesh.userData.orbitAngle = 0;
         issMesh.userData.sizeOriginal = 0.24; // Tamaño para cálculos
         issMesh.userData.nombre = 'ISS'; // Identificador
@@ -468,7 +476,10 @@ function crearISS() {
          // Marcar todos los hijos como parte de la ISS
         issMesh.traverse((child) => {
           if (child.isMesh) {
+            child.userData = child.userData || {};
             child.userData.esISS = true;
+            // Asegurar que los hijos no tengan posiciones conflictivas
+            child.position.set(0, 0, 0);
           }
         });
 
@@ -602,7 +613,7 @@ function animate() {
     }
 
     // Movimiento de la ISS
-    if (issMesh) {
+    if (issMesh && !missionStarted) {
       issMesh.userData.orbitAngle += iss.orbitaVelocidad;
       const tierraPos = planetMeshesMap.get('Tierra').position;
       issMesh.position.set(
@@ -610,6 +621,8 @@ function animate() {
         0,
         tierraPos.z + Math.sin(issMesh.userData.orbitAngle) * iss.orbitaRadio
       );
+      // Rotación de la ISS
+      issMesh.rotation.y += ROTACION_VELOCIDAD * 2;
     }
   }
 
@@ -724,6 +737,39 @@ function animate() {
 
   renderer.render(scene, camera);
 }
+
+/**
+ * Verifica si hay objetos duplicados en la escena
+ */
+function verificarDuplicados() {
+  console.log('=== VERIFICACIÓN DE DUPLICADOS ===');
+  
+  const objetos = [];
+  scene.traverse((object) => {
+    if (object.isMesh || object.isGroup) {
+      objetos.push({
+        nombre: object.name,
+        tipo: object.type,
+        posición: object.position.toArray(),
+        id: object.id
+      });
+    }
+  });
+  
+  console.log('Objetos en escena:', objetos);
+  
+  // Buscar duplicados de ISS
+  const issCount = objetos.filter(obj => 
+    obj.nombre.includes('ISS') || obj.nombre.includes('iss') || 
+    obj.tipo === 'Group' && obj.posición[0] === iss.orbitaRadio
+  ).length;
+  
+  console.log(`Número de objetos que parecen ISS: ${issCount}`);
+  console.log('==============================');
+}
+
+// Ejecutar después de cargar la escena
+window.verificarDuplicados = verificarDuplicados;
 
 /**
  * Inicia el modo de exploración libre del sistema solar
