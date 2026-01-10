@@ -361,7 +361,7 @@ function crearPlanetas() {
   planetMeshes = [];
   planetMeshesMap.clear();
 
-   // Velocidades de rotación realistas
+  // Velocidades de rotación realistas
   const rotationSpeeds = {
     'Sol': 0.002,
     'Mercurio': 0.008,
@@ -396,7 +396,7 @@ function crearPlanetas() {
     mesh.userData.nombre = p.nombre;
     mesh.userData.rotationSpeed = rotationSpeeds[p.nombre] || 0.005;
 
-     // Inclinar ejes de rotación (especialmente para Urano que rota de lado)
+    // Inclinar ejes de rotación (especialmente para Urano que rota de lado)
     if (p.nombre === 'Urano') {
       mesh.rotation.x = Math.PI / 2; // Rotado 90 grados
     } else if (p.nombre === 'Venus') {
@@ -574,7 +574,7 @@ function animate() {
     // 1. Planetas orbitando alrededor del Sol
     planetMeshes.forEach((mesh, i) => {
       const p = planetas[i];
-      
+
       // ROTACIÓN SOBRE SU PROPIO EJE
       if (mesh.userData) {
         if (!mesh.userData.rotationSpeed) {
@@ -593,7 +593,7 @@ function animate() {
         }
         mesh.rotation.y += mesh.userData.rotationSpeed;
       }
-      
+
       // ÓRBITA alrededor del Sol
       if (p.orbitaRadio > 0) {
         planetOrbitAngles[i] += p.orbitaVelocidad;
@@ -612,19 +612,19 @@ function animate() {
         lunaMesh.userData.rotationSpeed = 0.001;
       }
       lunaMesh.rotation.y += lunaMesh.userData.rotationSpeed;
-      
+
       // Actualizar ángulo de órbita
       lunaOrbitAngle += luna.orbitaVelocidad;
-      
+
       // Obtener posición actual de la Tierra
       const tierraMesh = planetMeshesMap.get('Tierra');
       if (tierraMesh) {
         const tierraPos = tierraMesh.position;
-        
+
         // Calcular nueva posición orbital alrededor de la Tierra
         const lunaX = tierraPos.x + Math.cos(lunaOrbitAngle) * luna.orbitaRadio;
         const lunaZ = tierraPos.z + Math.sin(lunaOrbitAngle) * luna.orbitaRadio;
-        
+
         lunaMesh.position.set(lunaX, 0, lunaZ);
       }
     }
@@ -633,23 +633,23 @@ function animate() {
     if (issMesh) {
       // Rotación de la ISS sobre su eje
       issMesh.rotation.y += ROTACION_VELOCIDAD * 2;
-      
+
       // Actualizar ángulo de órbita
       if (!issMesh.userData.orbitAngle) {
         issMesh.userData.orbitAngle = 0;
       }
       issMesh.userData.orbitAngle += iss.orbitaVelocidad;
-      
+
       // Obtener posición actual de la Tierra
       const tierraMesh = planetMeshesMap.get('Tierra');
       if (tierraMesh) {
         const tierraPos = tierraMesh.position;
-        
+
         // Calcular nueva posición orbital alrededor de la Tierra
         // La ISS orbita más rápido y más cerca que la Luna
         const issX = tierraPos.x + Math.cos(issMesh.userData.orbitAngle) * iss.orbitaRadio;
         const issZ = tierraPos.z + Math.sin(issMesh.userData.orbitAngle) * iss.orbitaRadio;
-        
+
         issMesh.position.set(issX, 0, issZ);
       }
     }
@@ -664,12 +664,12 @@ function animate() {
         mesh.rotation.y += 0.005;
       }
     });
-    
+
     // Rotar Luna y ISS durante la misión
     if (lunaMesh && lunaMesh.userData && lunaMesh.userData.rotationSpeed) {
       lunaMesh.rotation.y += lunaMesh.userData.rotationSpeed;
     }
-    
+
     if (issMesh) {
       issMesh.rotation.y += ROTACION_VELOCIDAD * 0.5;
     }
@@ -685,9 +685,6 @@ function animate() {
   }
 
   // Actualizar cámara y controles
-  if (camera) {
-    camera.lookAt(lookAtTarget);
-  }
   if (controlsEnabled && controls) {
     controls.update();
   }
@@ -816,6 +813,18 @@ function finalizarMision() {
   if (issMesh && originalOrbitSpeeds.iss !== undefined) {
     iss.orbitaVelocidad = originalOrbitSpeeds.iss;
   }
+
+  // Restaurar cámara a posición de vista general
+  controls.target.set(0, 0, 0);
+  
+  // Posición de cámara para vista general
+  if (window.innerWidth < 768) {
+    camera.position.set(0, 8, 40);
+  } else {
+    camera.position.set(0, 10, 60);
+  }
+  
+  controls.update();
 
   // Deshabilitar controles
   if (controls) {
@@ -1374,11 +1383,23 @@ function hideExploreButton() {
 function explorarObjeto(object) {
   if (!object) return;
 
-  // Restaurar material inmediatamente al explorar
+  // 1. Guardar la posición original del objeto ANTES de ocultar otros
+  const objectWorldPos = new THREE.Vector3();
+  object.getWorldPosition(objectWorldPos);
+
+  // 2. Restaurar material inmediatamente al explorar y ocultar botón
   restoreObjectMaterial(object);
   hideExploreButton();
 
-  // Ocultar todos los planetas excepto el seleccionado
+  // 3. Guardar posiciones de todos los planetas ANTES de ocultar
+  const savedPositions = new Map();
+  planetMeshes.forEach(mesh => {
+    const pos = new THREE.Vector3();
+    mesh.getWorldPosition(pos);
+    savedPositions.set(mesh, pos.clone());
+  });
+
+  // 4. Ocultar todos los planetas excepto el seleccionado
   mostrarSoloPlanetaSeleccionado(object);
 
   // Encontrar el índice del planeta para obtener sus datos
@@ -1390,18 +1411,25 @@ function explorarObjeto(object) {
     planetIndex = planetMeshes.indexOf(object);
   }
 
+  // 6. Calcular parámetros de la cámara
   const size = object.userData?.sizeOriginal || 1;
   const isMobile = window.innerWidth < 768;
+
+  // 7. Calcular posición de cámara basada en el tipo de objeto
+  let targetPosition;
 
   try {
     // Obtener posición mundial del objeto
     const objectWorldPos = new THREE.Vector3();
     object.getWorldPosition(objectWorldPos);
 
+    console.log(`Explorando ${object.userData?.nombre || 'objeto'} en posición:`, objectWorldPos);
+
     // Calcular posición de cámara basada en el tipo de objeto
     let targetPosition;
     let lookAtPosition = objectWorldPos.clone();
 
+    // ELEGIR LA POSICIÓN DE LA CÁMARA SEGÚN EL TIPO DE OBJETO
     if (planetIndex !== -1 && planetas[planetIndex]?.nombre === 'Saturno') {
       // Vista especial para Saturno para ver los anillos
       const distance = isMobile ? 12 : 15;
@@ -1440,22 +1468,33 @@ function explorarObjeto(object) {
     controls.enabled = false;
     controlsEnabled = false;
 
-    // Configurar el objetivo de la cámara
-    controls.target.copy(lookAtPosition);
+    // Configurar el objetivo de la cámara en la posición real del objeto
+    controls.target.copy(objectWorldPos);
+    controls.update();
 
     // Animación de acercamiento de cámara
+    const cameraTarget = controls.target.clone();
+
     gsap.to(camera.position, {
       duration: 2.5,
       x: targetPosition.x,
       y: targetPosition.y,
       z: targetPosition.z,
+      ease: 'power2.inOut'
+    });
+
+    gsap.to(cameraTarget, {
+      duration: 2.5,
+      x: objectWorldPos.x,
+      y: objectWorldPos.y,
+      z: objectWorldPos.z,
       ease: 'power2.inOut',
       onUpdate: () => {
-        camera.lookAt(lookAtPosition);
-        controls.target.copy(lookAtPosition);
+        controls.target.copy(cameraTarget);
+        controls.update();
       },
       onComplete: () => {
-        controls.target.copy(lookAtPosition);
+        controls.target.copy(objectWorldPos);
         controls.enabled = true;
         controlsEnabled = true;
         mostrarInformacionObjeto(object);
@@ -1464,7 +1503,23 @@ function explorarObjeto(object) {
 
   } catch (error) {
     console.error('Error en explorarObjeto:', error);
-    mostrarInformacionObjeto(object);
+    // Fallback: usar posición aproximada
+    const fallbackPosition = new THREE.Vector3(
+      object.position.x || 0,
+      object.position.y || 0,
+      object.position.z || 0
+    );
+
+    // Acercamiento simple como fallback
+    gsap.to(camera.position, {
+      duration: 2,
+      x: fallbackPosition.x - 10,
+      y: fallbackPosition.y + 5,
+      z: fallbackPosition.z + 10,
+      ease: 'power2.inOut',
+      onUpdate: () => camera.lookAt(fallbackPosition),
+      onComplete: () => mostrarInformacionObjeto(object)
+    });
   }
 }
 
@@ -1472,7 +1527,7 @@ function explorarObjeto(object) {
  * Muestra solo el planeta seleccionado y oculta los demás
  */
 function mostrarSoloPlanetaSeleccionado(object) {
-  // Ocultar TODOS los objetos primero
+  // 4-1. cambiar visibilidad no posiciones
   planetMeshes.forEach(mesh => {
     mesh.visible = false;
   });
@@ -1480,7 +1535,7 @@ function mostrarSoloPlanetaSeleccionado(object) {
   if (issMesh) issMesh.visible = false;
   if (saturnRings) saturnRings.visible = false;
 
-  // Determinar el tipo de objeto y mostrar solo lo necesario
+  // 5. Determinar el tipo de objeto y mostrar solo lo necesario
   const esLuna = object === lunaMesh || object.userData?.nombre === 'Luna';
   const esISS = object === issMesh || object.userData?.esISS || object.userData?.tipo === 'iss';
 
@@ -1633,6 +1688,10 @@ function hidePlanetInfoPanel() {
 
   // Restaurar HUD principal
   if (hud) hud.style.display = 'block';
+
+  // Restaurar el objetivo al centro para vista general
+  controls.target.set(0, 0, 0);
+  controls.update();
 
   // Limpiar selección actual
   if (selectedObject) {
