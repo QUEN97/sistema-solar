@@ -239,28 +239,27 @@ button:hover {
 
 /* === BOTÓN EXPLORAR MEJORADO === */
 #explore-btn {
-  position: fixed !important;
-  z-index: 10000 !important;
+  position: fixed !important; /* Cambiado de absolute a fixed */
+  z-index: 10000 !important; /* Z-index muy alto */
   pointer-events: auto !important;
   
-  /* Tamaño más compacto */
+  /* Estilos visuales */
   background: linear-gradient(135deg, #002244, #004488) !important;
-  border: 1px solid #00f0ff !important;
+  border: 2px solid #00f0ff !important;
   color: #00f0ff !important;
-  border-radius: 6px !important;
-  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
   font-family: 'Orbitron', sans-serif !important;
   font-weight: bold !important;
   letter-spacing: 1px !important;
   text-transform: uppercase !important;
-  font-size: 0.7rem !important;
-  min-width: auto !important;
+  font-size: 0.9rem !important;
   
-  /* Efectos más sutiles */
+  /* Efectos */
   box-shadow: 
-    0 0 15px rgba(0, 240, 255, 0.6),
-    0 0 30px rgba(0, 240, 255, 0.3) !important;
-  backdrop-filter: blur(8px) !important;
+    0 0 25px rgba(0, 240, 255, 0.8),
+    0 0 50px rgba(0, 240, 255, 0.4) !important;
+  backdrop-filter: blur(10px) !important;
   
   /* Transformación para centrar */
   transform: translate(-50%, -50%) !important;
@@ -269,20 +268,19 @@ button:hover {
   transition: all 0.3s ease !important;
   
   /* Animación de entrada */
-  animation: exploreBtnFadeIn 0.4s ease-out forwards !important;
+  animation: exploreBtnFadeIn 0.5s ease-out forwards !important;
   
-  /* Asegurar que sea visible pero discreto */
+  /* Asegurar que sea visible */
   opacity: 1 !important;
-  display: none;
+  display: none; /* Inicialmente oculto */
 }
 
 #explore-btn:hover {
   background: linear-gradient(135deg, #003366, #0055aa) !important;
-  border: 1px solid #00ffff !important;
   box-shadow: 
-    0 0 20px rgba(0, 255, 255, 0.8),
-    0 0 40px rgba(0, 255, 255, 0.4) !important;
-  transform: translate(-50%, -50%) scale(1.05) !important;
+    0 0 35px rgba(0, 240, 255, 1),
+    0 0 70px rgba(0, 240, 255, 0.6) !important;
+  transform: translate(-50%, -50%) scale(1.1) !important;
 }
 
 #explore-btn:active {
@@ -292,7 +290,7 @@ button:hover {
 @keyframes exploreBtnFadeIn {
   from { 
     opacity: 0; 
-    transform: translate(-50%, -50%) scale(0.8); 
+    transform: translate(-50%, -50%) scale(0.7); 
   }
   to { 
     opacity: 1; 
@@ -354,7 +352,6 @@ button:hover {
   padding: 12px 24px;
 }
 
-
 @keyframes pulse {
   0%, 100% { transform: scale(1); box-shadow: 0 0 10px cyan; }
   50% { transform: scale(1.05); box-shadow: 0 0 20px cyan; }
@@ -377,9 +374,6 @@ button:hover {
   color: #00f0ff !important;
   text-shadow: 0 0 10px rgba(0, 240, 255, 0.5) !important;
 }
-
-
-
 
 /* === VISTA INTERIOR DE NAVE ESPACIAL === */
 .spaceship-cockpit {
@@ -552,6 +546,12 @@ button:hover {
   pointer-events: auto;
 }
 
+.cockpit-btn:hover {
+  background: linear-gradient(135deg, #003366, #0055aa);
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+  transform: scale(1.05);
+}
+
 /* Consola inferior compacta */
 .lower-console {
   display: flex;
@@ -702,3 +702,282 @@ button:hover {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ============================================= */
+/* SISTEMAS DINÁMICOS - ESTILOS ADICIONALES */
+/* ============================================= */
+
+/* Animación de pulso para carga de batería */
+@keyframes chargingPulse {
+  0%, 100% { 
+    opacity: 1; 
+    background: linear-gradient(90deg, #00ff88, #00ccff);
+  }
+  50% { 
+    opacity: 0.6; 
+    background: linear-gradient(90deg, #00ccff, #00ff88);
+  }
+}
+
+/* Estados para indicadores de sistemas */
+.status-critical {
+  background: #ff4444 !important;
+  box-shadow: 0 0 10px rgba(255, 68, 68, 0.7) !important;
+}
+
+.status-warning {
+  background: #ffaa00 !important;
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.7) !important;
+}
+
+.status-online {
+  background: #00ff88 !important;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.7) !important;
+}
+
+/* Estilos para los sistemas de estado */
+.systems-status {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(0, 150, 255, 0.3);
+  width: 100%;
+}
+
+.system-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0;
+}
+
+.system-row .label {
+  color: rgba(0, 200, 255, 0.7);
+  font-weight: bold;
+}
+
+.system-row .value {
+  color: #00ffaa;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
+}
+
+/* Mejoras para el panel de control */
+.control-panel {
+  /* Ajustar altura para acomodar nuevos elementos */
+  min-height: 140px;
+}
+
+.lower-console {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.engine-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+/* Estados del sistema basados en batería */
+.system-status-critical {
+  color: #ff4444 !important;
+  text-shadow: 0 0 8px rgba(255, 68, 68, 0.5) !important;
+}
+
+.system-status-warning {
+  color: #ffaa00 !important;
+  text-shadow: 0 0 8px rgba(255, 170, 0, 0.5) !important;
+}
+
+.system-status-online {
+  color: #00ff88 !important;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.5) !important;
+}
+
+/* Mejoras para alertas contextuales */
+.alert-panel {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 0, 0, 0.9);
+  border: 1px solid rgba(255, 50, 50, 0.6);
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  backdrop-filter: blur(10px);
+  z-index: 15;
+  animation: alertPulse 2s infinite;
+  max-width: 350px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 50, 50, 0.4);
+}
+
+.alert-message {
+  color: #ff6666;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@keyframes alertPulse {
+  0%, 100% { 
+    border-color: rgba(255, 50, 50, 0.6);
+    box-shadow: 0 0 20px rgba(255, 50, 50, 0.4);
+  }
+  50% { 
+    border-color: rgba(255, 100, 100, 1);
+    box-shadow: 0 0 30px rgba(255, 100, 100, 0.7);
+  }
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .systems-status {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+  }
+  
+  .system-row {
+    font-size: 0.65rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  .alert-panel {
+    top: 60px;
+    max-width: 280px;
+    padding: 0.6rem 1rem;
+  }
+  
+  .alert-message {
+    font-size: 0.75rem;
+  }
+  
+  .navigation-console {
+    width: 200px;
+    height: 250px;
+    right: 10px;
+    top: 10px;
+  }
+  
+  .control-panel {
+    bottom: 10px;
+    width: 95%;
+  }
+  
+  .stellar-clock {
+    top: 10px;
+    left: 10px;
+    min-width: 150px;
+  }
+}
+
+ .compact-control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 280px;
+            background: linear-gradient(to top, rgba(0, 20, 40, 0.9), rgba(0, 10, 20, 0.85));
+            border: 2px solid rgba(0, 150, 255, 0.6);
+            border-radius: 12px;
+            backdrop-filter: blur(15px);
+            z-index: 10;
+            padding: 1rem;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+        }
+        
+        .mission-button-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        .compact-systems {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .compact-system {
+            background: rgba(0, 20, 40, 0.6);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            border-radius: 6px;
+            padding: 0.4rem;
+            text-align: center;
+        }
+        
+        .compact-system-label {
+            font-size: 0.65rem;
+            color: rgba(0, 200, 255, 0.7);
+            margin-bottom: 0.2rem;
+        }
+        
+        .compact-system-status {
+            font-size: 0.7rem;
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        .compact-energy-display {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .compact-power-indicator {
+            width: 60px;
+            height: 6px;
+            background: rgba(0, 50, 100, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .compact-power-level {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00ccff);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .compact-system-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            margin-bottom: 0.4rem;
+            padding: 0.2rem 0;
+        }
+        
+        .compact-system-row .label {
+            color: rgba(0, 200, 255, 0.7);
+            font-weight: bold;
+        }
+        
+        .compact-system-row .value {
+            color: #00ffaa;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .compact-control-panel {
+                width: 240px;
+                left: 10px;
+                bottom: 10px;
+            }
+            
+            .mission-button-container {
+                bottom: 10px;
+            }
+        }
