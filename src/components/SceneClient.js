@@ -111,8 +111,8 @@ const planetas = [
 const luna = {
   nombre: 'Luna',
   textura: '/textures/moon.jpg',
-  orbitaRadio: 3.6,
-  orbitaVelocidad: 0.0005,
+  orbitaRadio: 3.6, // Radio orbital alrededor de la Tierra
+  orbitaVelocidad: 0.0008,
   tamaño: 0.72
 };
 
@@ -120,7 +120,7 @@ const luna = {
 const iss = {
   nombre: 'ISS',
   textura: '/textures/iss.png',
-  orbitaRadio: 2.4,
+  orbitaRadio: 2.4, // Radio orbital (más cerca que la Luna)
   orbitaVelocidad: 0.02,
   tamaño: 0.24
 };
@@ -149,6 +149,7 @@ let planetMeshesMap = new Map();
 let planetOrbitAngles = new Array(planetas.length).fill(0);
 let lunaMesh = null;
 let lunaOrbitAngle = 0;
+let issOrbitAngle = 0;
 let saturnRings = null;
 let issMesh = null;
 let cinturónMeshes = [];
@@ -401,7 +402,7 @@ function crearPlanetas() {
     } else if (p.nombre === 'Venus') {
       mesh.rotation.x = Math.PI; // Venus rota en sentido contrario
     }
-    
+
     scene.add(mesh);
     planetMeshes.push(mesh);
     planetMeshesMap.set(p.nombre, mesh);
@@ -475,6 +476,7 @@ function crearISS() {
         issMesh.userData.sizeOriginal = 0.24;
         issMesh.userData.nombre = 'ISS';
         issMesh.userData.tipo = 'iss';
+        issMesh.userData.orbitSpeed = iss.orbitaVelocidad;
 
         // Marcar todos los hijos como parte de la ISS
         issMesh.traverse((child) => {
@@ -485,12 +487,12 @@ function crearISS() {
         });
 
         scene.add(issMesh);
-        console.log('✅ ISS cargada correctamente');
+        console.log('ISS cargada correctamente');
         resolve(issMesh);
       },
       undefined,
       error => {
-        console.error('❌ Error cargando ISS:', error);
+        console.error('Error cargando ISS:', error);
         reject(error);
       }
     );
@@ -569,18 +571,17 @@ function animate() {
 
   // MOVIMIENTO ORBITAL cuando no hay misión activa
   if (!missionStarted) {
+    // 1. Planetas orbitando alrededor del Sol
     planetMeshes.forEach((mesh, i) => {
       const p = planetas[i];
-
-      // ROTACIÓN SOBRE SU PROPIO EJE (esto es lo que falta)
-      // Cada planeta rota a diferentes velocidades
+      
+      // ROTACIÓN SOBRE SU PROPIO EJE
       if (mesh.userData) {
         if (!mesh.userData.rotationSpeed) {
-          // Asignar velocidad de rotación única para cada planeta
           const rotationSpeeds = {
             'Sol': 0.002,
             'Mercurio': 0.008,
-            'Venus': -0.004, // Gira en sentido contrario
+            'Venus': -0.004,
             'Tierra': 0.006,
             'Marte': 0.006,
             'Júpiter': 0.015,
@@ -590,10 +591,9 @@ function animate() {
           };
           mesh.userData.rotationSpeed = rotationSpeeds[p.nombre] || 0.005;
         }
-        // Aplicar rotación
         mesh.rotation.y += mesh.userData.rotationSpeed;
       }
-
+      
       // ÓRBITA alrededor del Sol
       if (p.orbitaRadio > 0) {
         planetOrbitAngles[i] += p.orbitaVelocidad;
@@ -605,40 +605,52 @@ function animate() {
       }
     });
 
-    // Movimiento de la Luna
+    // 2. LUNA orbitando alrededor de la Tierra
     if (lunaMesh) {
       // Rotación de la Luna sobre su eje
       if (!lunaMesh.userData.rotationSpeed) {
         lunaMesh.userData.rotationSpeed = 0.001;
       }
       lunaMesh.rotation.y += lunaMesh.userData.rotationSpeed;
-
-      // Órbita alrededor de la Tierra
+      
+      // Actualizar ángulo de órbita
       lunaOrbitAngle += luna.orbitaVelocidad;
-      const tierraPos = planetMeshesMap.get('Tierra')?.position;
-      if (tierraPos) {
-        lunaMesh.position.set(
-          tierraPos.x + Math.cos(lunaOrbitAngle) * luna.orbitaRadio,
-          0,
-          tierraPos.z + Math.sin(lunaOrbitAngle) * luna.orbitaRadio
-        );
+      
+      // Obtener posición actual de la Tierra
+      const tierraMesh = planetMeshesMap.get('Tierra');
+      if (tierraMesh) {
+        const tierraPos = tierraMesh.position;
+        
+        // Calcular nueva posición orbital alrededor de la Tierra
+        const lunaX = tierraPos.x + Math.cos(lunaOrbitAngle) * luna.orbitaRadio;
+        const lunaZ = tierraPos.z + Math.sin(lunaOrbitAngle) * luna.orbitaRadio;
+        
+        lunaMesh.position.set(lunaX, 0, lunaZ);
       }
     }
 
-    // Movimiento de la ISS
+    // 3. ISS orbitando alrededor de la Tierra
     if (issMesh) {
       // Rotación de la ISS sobre su eje
       issMesh.rotation.y += ROTACION_VELOCIDAD * 2;
-
-      // Órbita alrededor de la Tierra
+      
+      // Actualizar ángulo de órbita
+      if (!issMesh.userData.orbitAngle) {
+        issMesh.userData.orbitAngle = 0;
+      }
       issMesh.userData.orbitAngle += iss.orbitaVelocidad;
-      const tierraPos = planetMeshesMap.get('Tierra')?.position;
-      if (tierraPos) {
-        issMesh.position.set(
-          tierraPos.x + Math.cos(issMesh.userData.orbitAngle) * iss.orbitaRadio,
-          0,
-          tierraPos.z + Math.sin(issMesh.userData.orbitAngle) * iss.orbitaRadio
-        );
+      
+      // Obtener posición actual de la Tierra
+      const tierraMesh = planetMeshesMap.get('Tierra');
+      if (tierraMesh) {
+        const tierraPos = tierraMesh.position;
+        
+        // Calcular nueva posición orbital alrededor de la Tierra
+        // La ISS orbita más rápido y más cerca que la Luna
+        const issX = tierraPos.x + Math.cos(issMesh.userData.orbitAngle) * iss.orbitaRadio;
+        const issZ = tierraPos.z + Math.sin(issMesh.userData.orbitAngle) * iss.orbitaRadio;
+        
+        issMesh.position.set(issX, 0, issZ);
       }
     }
   }
@@ -649,16 +661,15 @@ function animate() {
       if (mesh.userData && mesh.userData.rotationSpeed) {
         mesh.rotation.y += mesh.userData.rotationSpeed;
       } else {
-        // Si no tiene velocidad asignada, usar una por defecto
         mesh.rotation.y += 0.005;
       }
     });
-
+    
     // Rotar Luna y ISS durante la misión
     if (lunaMesh && lunaMesh.userData && lunaMesh.userData.rotationSpeed) {
       lunaMesh.rotation.y += lunaMesh.userData.rotationSpeed;
     }
-
+    
     if (issMesh) {
       issMesh.rotation.y += ROTACION_VELOCIDAD * 0.5;
     }
