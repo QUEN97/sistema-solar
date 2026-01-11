@@ -160,7 +160,6 @@ let audioStarted = false;
 let typewriterTimeout = null;
 
 // Variables para sistemas dinámicos
-// Variables para sistemas dinámicos
 let fuel = 100;
 let energy = 100;
 let missionStartTime = null;
@@ -178,6 +177,11 @@ let solarDangerDistance = 15; // Distancia para daño
 let lastShieldDamageTime = Date.now();
 let inSolarDangerZone = false;
 let shields = 100; // Nivel de escudos separado de energía
+
+// Variables para recuperación automática
+let autoRecoveryEnabled = true;
+let autoRecoveryInterval = null;
+let recoverySpeed = 0.5; // % por segundo
 
 const ROTACION_VELOCIDAD = 0.005;
 const lookAtTarget = new THREE.Vector3();
@@ -847,6 +851,11 @@ function finalizarMision() {
     missionStartTime = null;
   }
 
+  // Iniciar recuperación automática INMEDIATAMENTE
+  setTimeout(() => {
+    startAutoRecovery();
+  }, 100);
+
   // Resetear selección actual
   if (selectedObject) {
     restoreObjectMaterial(selectedObject);
@@ -936,14 +945,22 @@ function initDynamicSystems() {
   // Inicializar combustible y energía
   fuel = 100;
   energy = 100;
+  shields = 100;
   updateFuelUI();
   updateEnergyUI();
+  updateShieldsUI();
 
   // Inicializar estado de navegación
   initializeNavigationSystem();
   actualizarEstadoNavegacion('inactiva'); // Estado inicial
   
+  // Iniciar sistema de recuperación automática
+  startAutoRecovery();
   
+  // Iniciar radar inmediatamente
+  setTimeout(() => {
+    initRadarSystem();
+  }, 500);
   
   // Inicializar monitoreo de batería
   initBatterySystem();
@@ -1093,6 +1110,11 @@ function initRealTimeSystems() {
 
   // Sistema de energía (cada 500ms)
   setInterval(updateEnergySystem, 500);
+
+  // Actualizar todos los sistemas (cada segundo)
+  setInterval(() => {
+    updateAllSystems();
+  }, 1000);
 
   // Sistema de daño solar (cada 500ms)
   setInterval(() => {
@@ -1296,24 +1318,24 @@ function updateSystemsByEnergy(energyLevel) {
   // Sensores - basados en energía
   const sensorsLevel = calculateSystemLevel(energyLevel, 'sensors');
   
-  // ESCUDOS - usar la variable shields (afectada por daño solar)
-  const shieldsLevel = Math.max(0, Math.min(100, shields));
+  // ESCUDOS - usar la variable shields pero ajustar fuera de misión
+  const displayShields = missionStarted ? shields : Math.max(80, shields);
   
   // Actualizar UI de sensores
   updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
   
   // Actualizar UI de escudos
-  updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
+  updateCompactSystemUI(shieldsElement, displayShields, 'ESCUDOS');
   
   // Alertas si sistemas están críticos
   if (missionStarted) {
     if (sensorsLevel < 30) {
       showAlert('⚠️ SENSORES CRÍTICOS - VISIBILIDAD REDUCIDA', 2000);
     }
-    if (shieldsLevel < 20) {
+    if (displayShields < 20) {
       showAlert('🛡️ ESCUDOS CRÍTICOS - VULNERABILIDAD ALTA', 2000);
     }
-    if (shieldsLevel <= 0) {
+    if (displayShields <= 0) {
       showAlert('💥 ESCUDOS DESTRUIDOS - EXPUESTO A RADIACIÓN SOLAR', 3000);
     }
   }
@@ -1376,17 +1398,24 @@ function updateCompactSystemUI(element, level, systemName) {
 
   if (level > 70) {
     statusClass = 'status-online';
-    statusText = `${level}%`;
+    statusText = `${Math.round(level)}%`;
   } else if (level > 40) {
     statusClass = 'status-warning';
-    statusText = `${level}%`;
+    statusText = `${Math.round(level)}%`;
   } else if (level > 0) {
     statusClass = 'status-critical';
-    statusText = `${level}%`;
+    statusText = `${Math.round(level)}%`;
   } else {
-    statusClass = 'status-critical';
-    statusText = 'OFFLINE';
-  }
+    // SOLO mostrar "OFFLINE" si realmente es 0 Y estamos en misión
+    if (missionStarted && level <= 0) {
+      statusClass = 'status-critical';
+      statusText = 'OFFLINE';
+    } else {
+      // Si no hay misión, mostrar porcentaje normal
+      statusClass = 'status-online';
+      statusText = `${Math.round(level)}%`;
+    }
+  } 
 
   // Actualizar contenido del elemento
   element.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
@@ -1446,26 +1475,41 @@ function startRefueling() {
  * Actualiza todos los sistemas basados en la energía disponible
  */
 function updateAllSystems() {
-  if (!missionStarted) return;
-  
-  // 1. PROPULSIÓN - Mostrar porcentaje
+  // 1. PROPULSIÓN - Mostrar porcentaje basado en energía
   const propulsionElement = document.querySelector('.compact-system:nth-child(1) .compact-system-status');
   if (propulsionElement) {
-    const propulsionLevel = calculateSystemLevel(energy, 'propulsion');
-    updateCompactSystemUI(propulsionElement, propulsionLevel, 'PROPULSIÓN');
+    // Si no hay misión, mostrar energía actual directamente
+    const propulsionLevel = missionStarted ? calculateSystemLevel(energy, 'propulsion') : energy;
     
-    // Si propulsión es crítica, limitar movimiento
-    if (propulsionLevel < 10 && controlsEnabled) {
-      controls.enableRotate = false;
-      controls.enablePan = false;
-      showAlert('PROPULSIÓN CRÍTICA - MOVIMIENTO LIMITADO', 2000);
-    } else if (controls) {
-      controls.enableRotate = true;
-      controls.enablePan = true;
+    // Determinar estado
+    let statusClass, statusText;
+    
+    if (propulsionLevel > 70) {
+      statusClass = 'status-online';
+      statusText = `${Math.round(propulsionLevel)}%`;
+    } else if (propulsionLevel > 40) {
+      statusClass = 'status-warning';
+      statusText = `${Math.round(propulsionLevel)}%`;
+    } else if (propulsionLevel > 0) {
+      statusClass = 'status-critical';
+      statusText = `${Math.round(propulsionLevel)}%`;
+    } else {
+      // Solo mostrar OFFLINE si es 0 Y estamos en misión
+      if (missionStarted) {
+        statusClass = 'status-critical';
+        statusText = 'OFFLINE';
+      } else {
+        // Si no hay misión, mostrar 0% pero no OFFLINE
+        statusClass = 'status-online';
+        statusText = `${Math.round(propulsionLevel)}%`;
+      }
     }
+    
+    propulsionElement.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
+    propulsionElement.title = `PROPULSIÓN: ${Math.round(propulsionLevel)}%`;
   }
   
-  // 2. NAVEGACIÓN - Mostrar "ACTIVA" o "INACTIVA" (NO porcentaje)
+  // 2. NAVEGACIÓN - Mostrar "ACTIVA" o "INACTIVA"
   const navigationElement = document.querySelector('.compact-system:nth-child(2) .compact-system-status');
   if (navigationElement) {
     if (missionStarted) {
@@ -1476,18 +1520,99 @@ function updateAllSystems() {
     navigationElement.title = `NAVEGACIÓN: ${missionStarted ? 'ACTIVA' : 'INACTIVA'}`;
   }
   
-  // 3. ESCUDOS - Mostrar porcentaje
+  // 3. ESCUDOS - Mostrar porcentaje actual (usando variable shields)
   const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
   if (shieldsElement) {
-    const shieldsLevel = calculateSystemLevel(energy, 'shields');
-    updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
+    // Si no hay misión, mostrar escudos recuperados (mínimo 80%)
+    const displayShields = missionStarted ? shields : Math.max(80, shields);
+    
+    let statusClass, statusText;
+    
+    if (displayShields > 70) {
+      statusClass = 'status-online';
+      statusText = `${Math.round(displayShields)}%`;
+    } else if (displayShields > 40) {
+      statusClass = 'status-warning';
+      statusText = `${Math.round(displayShields)}%`;
+    } else if (displayShields > 0) {
+      statusClass = 'status-critical';
+      statusText = `${Math.round(displayShields)}%`;
+    } else {
+      // Solo mostrar DESTRUIDOS si estamos en misión
+      if (missionStarted) {
+        statusClass = 'status-critical';
+        statusText = 'DESTRUIDOS';
+      } else {
+        // Si no hay misión, mostrar 0% pero no DESTRUIDOS
+        statusClass = 'status-online';
+        statusText = `${Math.round(displayShields)}%`;
+      }
+    }
+    
+    shieldsElement.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
+    shieldsElement.title = `ESCUDOS: ${Math.round(displayShields)}%`;
   }
   
   // 4. SENSORES - Mostrar porcentaje
   const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
   if (sensorsElement) {
-    const sensorsLevel = calculateSystemLevel(energy, 'sensors');
+    // Si no hay misión, mostrar 100%
+    const sensorsLevel = missionStarted ? calculateSystemLevel(energy, 'sensors') : 100;
+    
     updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
+  }
+}
+
+/**
+ * Sistema de recuperación automática después de misión
+ */
+function startAutoRecovery() {
+  if (autoRecoveryInterval) {
+    clearInterval(autoRecoveryInterval);
+  }
+  
+  autoRecoveryInterval = setInterval(() => {
+    if (!missionStarted) {
+      recoverAllSystems();
+    }
+  }, 1000); // Recuperar cada segundo
+}
+
+/**
+ * Recupera todos los sistemas gradualmente
+ */
+function recoverAllSystems() {
+  // Recuperar combustible si está bajo 100%
+  if (fuel < 100) {
+    fuel += recoverySpeed;
+    fuel = Math.min(100, fuel);
+    updateFuelUI();
+  }
+  
+  // Recuperar energía si está bajo 100%
+  if (energy < 100) {
+    energy += recoverySpeed * 0.8;
+    energy = Math.min(100, energy);
+    updateEnergyUI();
+  }
+  
+  // Recuperar escudos a un mínimo de 80% si están bajos
+  if (shields < 80) {
+    shields += recoverySpeed * 1.2; // Los escudos se recuperan más rápido
+    shields = Math.min(100, Math.max(80, shields)); // Mínimo 80%, máximo 100%
+    updateShieldsUI();
+  }
+  
+  // Actualizar todos los sistemas
+  updateAllSystems();
+  
+  // Detener recuperación si todo está en niveles aceptables
+  if (fuel >= 100 && energy >= 100 && shields >= 80) {
+    if (autoRecoveryInterval) {
+      clearInterval(autoRecoveryInterval);
+      autoRecoveryInterval = null;
+      console.log('✅ Sistemas recuperados a niveles normales');
+    }
   }
 }
 
@@ -2227,19 +2352,27 @@ function updateShieldsUI() {
     
     // Determinar clase de estado
     let statusClass = 'status-online';
-    if (shieldsLevel < 40) statusClass = 'status-warning';
-    if (shieldsLevel < 20) statusClass = 'status-critical';
-    if (shieldsLevel <= 0) statusClass = 'status-critical';
-    
-    // Determinar texto
     let statusText = `${shieldsLevel}%`;
-    if (shieldsLevel <= 0) statusText = 'DESTRUIDOS';
+    
+    if (missionStarted) {
+      // DURANTE MISIÓN: mostrar estados críticos
+      if (shieldsLevel < 40) statusClass = 'status-warning';
+      if (shieldsLevel < 20) statusClass = 'status-critical';
+      if (shieldsLevel <= 0) {
+        statusClass = 'status-critical';
+        statusText = 'DESTRUIDOS';
+      }
+    } else {
+      // FUERA DE MISIÓN: siempre mostrar online (recuperación automática)
+      statusClass = 'status-online';
+      statusText = `${Math.max(80, shieldsLevel)}%`; // Mínimo 80%
+    }
     
     // Actualizar elemento
     shieldsElement.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
     shieldsElement.title = `ESCUDOS: ${shieldsLevel}%${inSolarDangerZone ? ' (DAÑO SOLAR)' : ''}`;
     
-    // Efecto visual si escudos están bajos
+    // Efecto visual si escudos están bajos DURANTE misión
     if (shieldsLevel < 30 && missionStarted) {
       shieldsElement.style.animation = 'pulse 1s infinite';
     } else {
