@@ -9,7 +9,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   background-color: black;
   font-family: 'Orbitron', sans-serif;
@@ -23,18 +24,39 @@ button {
 
 /* === ANIMACIONES === */
 @keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(-10px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes blink {
-  0%, 50%, 100% { opacity: 1; }
-  25%, 75% { opacity: 0.3; }
+
+  0%,
+  50%,
+  100% {
+    opacity: 1;
+  }
+
+  25%,
+  75% {
+    opacity: 0.3;
+  }
 }
 
 @keyframes scanlineMove {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
 }
 
 /* === EFECTO HUD === */
@@ -93,10 +115,10 @@ button:hover {
   width: 100%;
   height: 100%;
   background: radial-gradient(circle at center, #020d1f 0%, #000000 100%);
-   filter: brightness(1.1) contrast(1.2);
-   position: absolute;
+  filter: brightness(1.1) contrast(1.2);
+  position: absolute;
   z-index: 1;
-  pointer-events: auto; 
+  pointer-events: auto;
 }
 
 /* === Reflejo del visor del casco con animación === */
@@ -109,11 +131,9 @@ button:hover {
   pointer-events: none;
   z-index: 5;
 
-  background: radial-gradient(
-    ellipse at var(--reflect-x, 50%) var(--reflect-y, 50%),
-    rgba(255, 255, 255, var(--reflect-opacity, 0.04)) 0%,
-    rgba(0, 0, 0, 0) 70%
-  );
+  background: radial-gradient(ellipse at var(--reflect-x, 50%) var(--reflect-y, 50%),
+      rgba(255, 255, 255, var(--reflect-opacity, 0.04)) 0%,
+      rgba(0, 0, 0, 0) 70%);
 
   overflow: hidden;
 }
@@ -140,25 +160,38 @@ button:hover {
   width: 100%;
   height: 100%;
 
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0) 40%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0) 40%);
 
   mix-blend-mode: screen;
   animation: visorBlink 6s ease-in-out infinite;
 }
 
 @keyframes visorDistortion {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  50% { transform: translate(10px, 5px) rotate(1deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate(10px, 5px) rotate(1deg);
+  }
+
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
 }
 
 @keyframes visorBlink {
-  0%, 100% { opacity: 0.05; }
-  50% { opacity: 0.15; }
+
+  0%,
+  100% {
+    opacity: 0.05;
+  }
+
+  50% {
+    opacity: 0.15;
+  }
 }
 
 /* === Marco del visor del casco === */
@@ -170,7 +203,7 @@ button:hover {
   height: 100%;
   border: 4px solid rgba(0, 255, 255, 0.3);
   border-radius: 50% / 30%;
-  box-shadow: 0 0 20px rgba(0,255,255,0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
   pointer-events: none;
   z-index: 4;
 }
@@ -207,7 +240,7 @@ button:hover {
   transform-style: preserve-3d;
   position: absolute;
   z-index: 2;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 /* === Botones estilo militar === */
@@ -221,8 +254,10 @@ button:hover {
   letter-spacing: 1px;
   border-radius: 0.5rem;
   transition: all 0.3s ease;
-  pointer-events: auto !important; /* Esto es crucial */
-  position: relative; /* Asegura que respete el z-index */
+  pointer-events: auto !important;
+  /* Esto es crucial */
+  position: relative;
+  /* Asegura que respete el z-index */
   z-index: 210;
 }
 
@@ -239,10 +274,12 @@ button:hover {
 
 /* === BOTÓN EXPLORAR MEJORADO === */
 #explore-btn {
-  position: fixed !important; /* Cambiado de absolute a fixed */
-  z-index: 10000 !important; /* Z-index muy alto */
+  position: fixed !important;
+  /* Cambiado de absolute a fixed */
+  z-index: 10000 !important;
+  /* Z-index muy alto */
   pointer-events: auto !important;
-  
+
   /* Estilos visuales */
   background: linear-gradient(135deg, #002244, #004488) !important;
   border: 2px solid #00f0ff !important;
@@ -254,30 +291,31 @@ button:hover {
   letter-spacing: 1px !important;
   text-transform: uppercase !important;
   font-size: 0.9rem !important;
-  
+
   /* Efectos */
-  box-shadow: 
+  box-shadow:
     0 0 25px rgba(0, 240, 255, 0.8),
     0 0 50px rgba(0, 240, 255, 0.4) !important;
   backdrop-filter: blur(10px) !important;
-  
+
   /* Transformación para centrar */
   transform: translate(-50%, -50%) !important;
-  
+
   /* Transición suave */
   transition: all 0.3s ease !important;
-  
+
   /* Animación de entrada */
   animation: exploreBtnFadeIn 0.5s ease-out forwards !important;
-  
+
   /* Asegurar que sea visible */
   opacity: 1 !important;
-  display: none; /* Inicialmente oculto */
+  display: none;
+  /* Inicialmente oculto */
 }
 
 #explore-btn:hover {
   background: linear-gradient(135deg, #003366, #0055aa) !important;
-  box-shadow: 
+  box-shadow:
     0 0 35px rgba(0, 240, 255, 1),
     0 0 70px rgba(0, 240, 255, 0.6) !important;
   transform: translate(-50%, -50%) scale(1.1) !important;
@@ -288,13 +326,14 @@ button:hover {
 }
 
 @keyframes exploreBtnFadeIn {
-  from { 
-    opacity: 0; 
-    transform: translate(-50%, -50%) scale(0.7); 
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
   }
-  to { 
-    opacity: 1; 
-    transform: translate(-50%, -50%) scale(1); 
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -305,8 +344,15 @@ button:hover {
 }
 
 @keyframes planetPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 /* === ANIMACIONES DE TRANSICIÓN MEJORADAS === */
@@ -341,24 +387,36 @@ button:hover {
   background: linear-gradient(90deg, transparent, currentColor, transparent);
 }
 
-#current-date, #current-time {
+#current-date,
+#current-time {
   font-family: 'Orbitron', monospace;
   letter-spacing: 1px;
 }
 
-#comenzar-btn, #finalizar-btn {
+#comenzar-btn,
+#finalizar-btn {
   min-width: 180px;
   font-size: 1.1rem;
   padding: 12px 24px;
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 10px cyan; }
-  50% { transform: scale(1.05); box-shadow: 0 0 20px cyan; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px cyan;
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px cyan;
+  }
 }
 
 /* Asegúrate que los paneles de información tengan alto z-index */
-#planet-info-panel, #planet-funfacts-panel {
+#planet-info-panel,
+#planet-funfacts-panel {
   background: rgba(0, 20, 40, 0.95) !important;
   border: 2px solid rgba(0, 255, 255, 0.7) !important;
   backdrop-filter: blur(10px) !important;
@@ -370,7 +428,8 @@ button:hover {
   z-index: 1000 !important;
 }
 
-#planet-info-panel h2, #planet-funfacts-panel h3 {
+#planet-info-panel h2,
+#planet-funfacts-panel h3 {
   color: #00f0ff !important;
   text-shadow: 0 0 10px rgba(0, 240, 255, 0.5) !important;
 }
@@ -397,7 +456,7 @@ button:hover {
   height: 100%;
   border: 8px solid transparent;
   border-image: linear-gradient(45deg, rgba(0, 100, 200, 0.3), rgba(0, 50, 100, 0.2), rgba(0, 100, 200, 0.3)) 1;
-  background: 
+  background:
     linear-gradient(90deg, transparent 98%, rgba(0, 100, 200, 0.1) 100%),
     linear-gradient(180deg, transparent 98%, rgba(0, 100, 200, 0.1) 100%);
   z-index: 1;
@@ -458,12 +517,10 @@ button:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(0, 200, 255, 0.1) 10deg,
-    transparent 20deg
-  );
+  background: conic-gradient(from 0deg,
+      transparent 0deg,
+      rgba(0, 200, 255, 0.1) 10deg,
+      transparent 20deg);
   animation: radarSweep 3s linear infinite;
 }
 
@@ -639,12 +696,15 @@ button:hover {
     transform: translateY(100vh) translateX(0);
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   90% {
     opacity: 1;
   }
+
   100% {
     transform: translateY(-100vh) translateX(100px);
     opacity: 0;
@@ -664,13 +724,16 @@ button:hover {
 }
 
 @keyframes blipPulse {
-  0%, 100% { 
-    transform: translate(-50%, -50%) scale(1); 
-    opacity: 0.8; 
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
   }
-  50% { 
-    transform: translate(-50%, -50%) scale(1.5); 
-    opacity: 0.4; 
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0.4;
   }
 }
 
@@ -684,23 +747,50 @@ button:hover {
   animation: statusPulse 2s infinite;
 }
 
-.status-online { background: #00ff88; }
-.status-warning { background: #ffaa00; }
-.status-critical { background: #ff4444; }
+.status-online {
+  background: #00ff88;
+}
+
+.status-warning {
+  background: #ffaa00;
+}
+
+.status-critical {
+  background: #ff4444;
+}
 
 @keyframes statusPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes alertPulse {
-  0%, 100% { border-color: rgba(255, 50, 50, 0.6); }
-  50% { border-color: rgba(255, 100, 100, 1); }
+
+  0%,
+  100% {
+    border-color: rgba(255, 50, 50, 0.6);
+  }
+
+  50% {
+    border-color: rgba(255, 100, 100, 1);
+  }
 }
 
 @keyframes radarSweep {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============================================= */
@@ -709,12 +799,15 @@ button:hover {
 
 /* Animación de pulso para carga de batería */
 @keyframes chargingPulse {
-  0%, 100% { 
-    opacity: 1; 
+
+  0%,
+  100% {
+    opacity: 1;
     background: linear-gradient(90deg, #00ff88, #00ccff);
   }
-  50% { 
-    opacity: 0.6; 
+
+  50% {
+    opacity: 0.6;
     background: linear-gradient(90deg, #00ccff, #00ff88);
   }
 }
@@ -827,11 +920,14 @@ button:hover {
 }
 
 @keyframes alertPulse {
-  0%, 100% { 
+
+  0%,
+  100% {
     border-color: rgba(255, 50, 50, 0.6);
     box-shadow: 0 0 20px rgba(255, 50, 50, 0.4);
   }
-  50% { 
+
+  50% {
     border-color: rgba(255, 100, 100, 1);
     box-shadow: 0 0 30px rgba(255, 100, 100, 0.7);
   }
@@ -843,34 +939,34 @@ button:hover {
     margin-top: 0.6rem;
     padding-top: 0.6rem;
   }
-  
+
   .system-row {
     font-size: 0.65rem;
     margin-bottom: 0.3rem;
   }
-  
+
   .alert-panel {
     top: 60px;
     max-width: 280px;
     padding: 0.6rem 1rem;
   }
-  
+
   .alert-message {
     font-size: 0.75rem;
   }
-  
+
   .navigation-console {
     width: 200px;
     height: 250px;
     right: 10px;
     top: 10px;
   }
-  
+
   .control-panel {
     bottom: 10px;
     width: 95%;
   }
-  
+
   .stellar-clock {
     top: 10px;
     left: 10px;
@@ -878,106 +974,143 @@ button:hover {
   }
 }
 
- .compact-control-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 280px;
-            background: linear-gradient(to top, rgba(0, 20, 40, 0.9), rgba(0, 10, 20, 0.85));
-            border: 2px solid rgba(0, 150, 255, 0.6);
-            border-radius: 12px;
-            backdrop-filter: blur(15px);
-            z-index: 10;
-            padding: 1rem;
-            box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
-        }
-        
-        .mission-button-container {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-        
-        .compact-systems {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 0.8rem;
-        }
-        
-        .compact-system {
-            background: rgba(0, 20, 40, 0.6);
-            border: 1px solid rgba(0, 150, 255, 0.3);
-            border-radius: 6px;
-            padding: 0.4rem;
-            text-align: center;
-        }
-        
-        .compact-system-label {
-            font-size: 0.65rem;
-            color: rgba(0, 200, 255, 0.7);
-            margin-bottom: 0.2rem;
-        }
-        
-        .compact-system-status {
-            font-size: 0.7rem;
-            color: #00ff88;
-            font-weight: bold;
-        }
-        
-        .compact-energy-display {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.8rem;
-        }
-        
-        .compact-power-indicator {
-            width: 60px;
-            height: 6px;
-            background: rgba(0, 50, 100, 0.5);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        
-        .compact-power-level {
-            height: 100%;
-            background: linear-gradient(90deg, #00ff88, #00ccff);
-            border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-        
-        .compact-system-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.7rem;
-            margin-bottom: 0.4rem;
-            padding: 0.2rem 0;
-        }
-        
-        .compact-system-row .label {
-            color: rgba(0, 200, 255, 0.7);
-            font-weight: bold;
-        }
-        
-        .compact-system-row .value {
-            color: #00ffaa;
-            font-family: 'Orbitron', monospace;
-            font-size: 0.75rem;
-            text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
-        }
-        
-        @media (max-width: 768px) {
-            .compact-control-panel {
-                width: 240px;
-                left: 10px;
-                bottom: 10px;
-            }
-            
-            .mission-button-container {
-                bottom: 10px;
-            }
-        }
+.compact-control-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 280px;
+  background: linear-gradient(to top, rgba(0, 20, 40, 0.9), rgba(0, 10, 20, 0.85));
+  border: 2px solid rgba(0, 150, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(15px);
+  z-index: 10;
+  padding: 1rem;
+  box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+}
+
+.mission-button-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.compact-systems {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.compact-system {
+  background: rgba(0, 20, 40, 0.6);
+  border: 1px solid rgba(0, 150, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.compact-system-label {
+  font-size: 0.65rem;
+  color: rgba(0, 200, 255, 0.7);
+  margin-bottom: 0.2rem;
+}
+
+.compact-system-status {
+  font-size: 0.7rem;
+  color: #00ff88;
+  font-weight: bold;
+}
+
+.compact-energy-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.compact-power-indicator {
+  width: 60px;
+  height: 6px;
+  background: rgba(0, 50, 100, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.compact-power-level {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88, #00ccff);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.compact-system-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0;
+}
+
+.compact-system-row .label {
+  color: rgba(0, 200, 255, 0.7);
+  font-weight: bold;
+}
+
+.compact-system-row .value {
+  color: #00ffaa;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
+}
+
+@media (max-width: 768px) {
+  .compact-control-panel {
+    width: 240px;
+    left: 10px;
+    bottom: 10px;
+  }
+
+  .mission-button-container {
+    bottom: 10px;
+  }
+}
+
+/* Efectos para comunicaciones */
+#comms-display {
+  transition: all 0.3s ease;
+}
+
+#comms-display.transmitting {
+  color: #00ff96;
+  text-shadow: 0 0 10px rgba(0, 255, 150, 0.7);
+  animation: commPulse 1s infinite;
+}
+
+@keyframes commPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Estados de comunicación */
+.comm-active {
+  color: #00ff96 !important;
+}
+
+.comm-warning {
+  color: #ffaa00 !important;
+}
+
+.comm-critical {
+  color: #ff4444 !important;
+  animation: blink 1s infinite;
+}

@@ -160,8 +160,15 @@ let audioStarted = false;
 let typewriterTimeout = null;
 
 // Variables para sistemas dinámicos
+// Variables para sistemas dinámicos
 let fuel = 100;
+let energy = 100;
+let missionStartTime = null;
+let fuelConsumptionRate = 0.05; // % por segundo
+let energyConsumptionRate = 0.03; // % por segundo
 let lastFuelUpdate = Date.now();
+let isRefueling = false;
+let refuelInterval = null;
 
 const ROTACION_VELOCIDAD = 0.005;
 const lookAtTarget = new THREE.Vector3();
@@ -715,8 +722,25 @@ function animate() {
  * Inicia el modo de exploración libre del sistema solar
  */
 function comenzarMision() {
-  console.log('🚀 Iniciando misión...');
+  console.log('Iniciando misión...');
+  // Verificar que haya suficiente combustible
+  if (fuel < 50) {
+    showAlert(`❌ COMBUSTIBLE INSUFICIENTE: ${Math.round(fuel)}% - MÍNIMO 50% REQUERIDO`, 4000);
+    return;
+  }
+
+  // Verificar que haya suficiente energía
+  if (energy < 30) {
+    showAlert(`❌ ENERGÍA INSUFICIENTE: ${Math.round(energy)}% - RECARGAR SISTEMAS`, 4000);
+    return;
+  }
   missionStarted = true;
+  missionStartTime = Date.now();
+
+  setTimeout(() => {
+    updateAllSystems();
+    updateSystemsByEnergy(energy);
+  }, 100);
 
   // Actualizar estado de navegación
   actualizarEstadoNavegacion('activa');
@@ -761,9 +785,10 @@ function comenzarMision() {
     controls.enabled = true;
   }
   controlsEnabled = true;
-  if (renderer) {
-    renderer.domElement.style.pointerEvents = 'auto';
-  }
+
+  // if (renderer) {
+  //   renderer.domElement.style.pointerEvents = 'auto';
+  // }
 
   // Actualizar interfaz de usuario
   const comenzarBtn = document.getElementById('comenzar-btn');
@@ -787,7 +812,13 @@ function finalizarMision() {
   // Actualizar estado de navegación
   actualizarEstadoNavegacion('inactiva');
 
-  showAlert("MISIÓN FINALIZADA - REGRESANDO A BASE");
+  // Mostrar estadísticas de misión
+  if (missionStartTime) {
+    const missionDuration = Math.round((Date.now() - missionStartTime) / 1000);
+    const fuelUsed = 100 - fuel;
+    showAlert(`MISIÓN FINALIZADA - Duración: ${missionDuration}s - Combustible usado: ${Math.round(fuelUsed)}%`, 5000);
+    missionStartTime = null;
+  }
 
   // Resetear selección actual
   if (selectedObject) {
@@ -816,14 +847,14 @@ function finalizarMision() {
 
   // Restaurar cámara a posición de vista general
   controls.target.set(0, 0, 0);
-  
+
   // Posición de cámara para vista general
   if (window.innerWidth < 768) {
     camera.position.set(0, 8, 40);
   } else {
     camera.position.set(0, 10, 60);
   }
-  
+
   controls.update();
 
   // Deshabilitar controles
@@ -841,6 +872,11 @@ function finalizarMision() {
   if (comenzarBtn) comenzarBtn.style.display = 'block';
   if (finalizarBtn) finalizarBtn.style.display = 'none';
 
+  // Iniciar recarga automática si combustible está bajo
+  if (fuel < 50) {
+    setTimeout(startRefueling, 2000);
+  }
+
   console.log('Misión finalizada correctamente');
 }
 
@@ -848,22 +884,15 @@ function finalizarMision() {
  * Actualiza el estado de navegación en el HUD
  */
 function actualizarEstadoNavegacion(estado) {
-  const navElement = document.querySelector('.system-indicator:nth-child(2) .system-status');
-  if (navElement) {
-    const statusLight = navElement.querySelector('.status-light');
-    const statusText = navElement.lastChild; // Usar lastChild en lugar de childNodes[2]
-
+  const navigationElement = document.querySelector('.compact-system:nth-child(2) .compact-system-status');
+  
+  if (navigationElement) {
     if (estado === 'activa') {
-      if (statusLight) statusLight.className = 'status-light status-online';
-      if (statusText && statusText.nodeType === Node.TEXT_NODE) {
-        statusText.textContent = 'ACTIVA';
-      }
+      navigationElement.innerHTML = '<span class="status-light status-online"></span>ACTIVA';
     } else {
-      if (statusLight) statusLight.className = 'status-light status-warning';
-      if (statusText && statusText.nodeType === Node.TEXT_NODE) {
-        statusText.textContent = 'INACTIVA';
-      }
+      navigationElement.innerHTML = '<span class="status-light status-warning"></span>INACTIVA';
     }
+    navigationElement.title = `NAVEGACIÓN: ${estado === 'activa' ? 'ACTIVA' : 'INACTIVA'}`;
   }
 }
 
@@ -874,20 +903,27 @@ function actualizarEstadoNavegacion(estado) {
 /**
  * Inicializa todos los sistemas dinámicos del HUD
  */
-export function initDynamicSystems() {
+function initDynamicSystems() {
   console.log('Inicializando sistemas dinámicos del HUD...');
 
+  // Inicializar combustible y energía
+  fuel = 100;
+  energy = 100;
+  updateFuelUI();
+  updateEnergyUI();
+
+  // Inicializar estado de navegación
+  initializeNavigationSystem();
+  actualizarEstadoNavegacion('inactiva'); // Estado inicial
+  
+  
+  
   // Inicializar monitoreo de batería
   initBatterySystem();
-
+  
   // Inicializar sistemas en tiempo real
   initRealTimeSystems();
-
-  // Inicializar efectos de cabina
-  initCockpitEffects();
-
-  // Inicializar radar básico
-  initRadarSystem();
+  
 
   console.log('Sistemas dinámicos inicializados');
 }
@@ -896,11 +932,15 @@ export function initDynamicSystems() {
  * Sistema de monitoreo de batería
  */
 function initBatterySystem() {
-  // API de Battery Status
+  // API de Battery Status del navegador
   if ('getBattery' in navigator) {
     navigator.getBattery().then(battery => {
+      console.log('🔋 Batería del dispositivo detectada:', Math.round(battery.level * 100), '%');
+
+      // Actualizar UI inicial
       updateBatteryUI(battery.level * 100, battery.charging);
 
+      // Event listeners
       battery.addEventListener('levelchange', () => {
         updateBatteryUI(battery.level * 100, battery.charging);
       });
@@ -908,10 +948,28 @@ function initBatterySystem() {
       battery.addEventListener('chargingchange', () => {
         updateBatteryUI(battery.level * 100, battery.charging);
       });
+
+      // También actualizar sistemas basados en batería del dispositivo
+      battery.addEventListener('levelchange', () => {
+        updateSystemsByBattery(battery.level * 100);
+      });
     });
   } else {
-    // Fallback: simular batería
-    updateBatteryUI(75, false);
+    // Fallback: simular batería del dispositivo
+    console.log('⚠️ API de batería no disponible, usando simulación');
+    const simulatedBattery = 75; // 75% por defecto
+    const isCharging = false;
+
+    updateBatteryUI(simulatedBattery, isCharging);
+    updateSystemsByBattery(simulatedBattery);
+
+    // Simular cambios aleatorios
+    setInterval(() => {
+      const change = (Math.random() - 0.5) * 2; // -1 a +1
+      simulatedBattery = Math.max(10, Math.min(100, simulatedBattery + change));
+      updateBatteryUI(simulatedBattery, isCharging);
+      updateSystemsByBattery(simulatedBattery);
+    }, 30000); // Cada 30 segundos
   }
 }
 
@@ -954,17 +1012,22 @@ function updateBatteryUI(level, charging) {
  * Actualiza sensores y escudos según nivel de batería
  */
 function updateSystemsByBattery(batteryLevel) {
-  const sensorsElement = document.querySelector('.system-indicator:nth-child(4) .system-status');
-  const shieldsElement = document.querySelector('.system-indicator:nth-child(3) .system-status');
+  // Solo usar si la batería del dispositivo está disponible
+  // De lo contrario, usar updateSystemsByEnergy()
+
+  const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
+  const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
 
   if (sensorsElement && shieldsElement) {
-    // Sensores (más sensibles)
-    const sensorsLevel = Math.min(100, batteryLevel + 20);
-    updateSystemUI(sensorsElement, sensorsLevel);
+    // Sensores (más sensibles a la batería)
+    const sensorsLevel = Math.min(100, batteryLevel + 15);
 
     // Escudos (consumen más energía)
-    const shieldsLevel = Math.max(0, batteryLevel - 15);
-    updateSystemUI(shieldsElement, shieldsLevel);
+    const shieldsLevel = Math.max(0, batteryLevel - 20);
+
+    // Actualizar UI
+    updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
+    updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
   }
 }
 
@@ -998,15 +1061,36 @@ function initRealTimeSystems() {
   // Coordenadas en tiempo real
   setInterval(updateCoordinates, 1000);
 
-  // Sistema de combustible
-  setInterval(updateFuelSystem, 500);
+  // Sistema de combustible (cada 100ms para más precisión)
+  setInterval(updateFuelSystem, 100);
+
+  // Sistema de energía (cada 500ms)
+  setInterval(updateEnergySystem, 500);
 
   // Alertas contextuales
   setInterval(generateContextualAlerts, 3000);
 
   // Comunicaciones
-  setTimeout(showCommunicationMessage, 5000);
-  setInterval(showCommunicationMessage, 15000);
+  // Comunicaciones - PRIMER MENSAJE
+  setTimeout(() => {
+    showCommunicationMessage();
+  }, 2000);
+
+  // Comunicaciones - MENSAJES PERIÓDICOS
+  // Cada 10-20 segundos cuando la misión está activa, cada 30 segundos cuando está inactiva
+  setInterval(() => {
+    if (missionStarted) {
+      // Durante misión: mensajes más frecuentes
+      if (Math.random() > 0.4) { // 60% de probabilidad
+        showCommunicationMessage();
+      }
+    } else {
+      // Sin misión: mensajes menos frecuentes
+      if (Math.random() > 0.7) { // 30% de probabilidad
+        showCommunicationMessage();
+      }
+    }
+  }, 10000); // Revisar cada 10 segundos
 }
 
 /**
@@ -1026,18 +1110,43 @@ function updateCoordinates() {
  * Sistema de combustible
  */
 function updateFuelSystem() {
-  if (!missionStarted || !camera) return;
+  if (!missionStarted || !camera || fuel <= 0) return;
 
   const now = Date.now();
-  const delta = (now - lastFuelUpdate) / 1000;
+  const delta = (now - lastFuelUpdate) / 1000; // Segundos desde la última actualización
   lastFuelUpdate = now;
 
-  // Consumo basado en movimiento de cámara
-  const speed = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-  fuel -= speed * delta * 0.1;
-  fuel = Math.max(0, fuel);
+  // Consumo básico por tiempo
+  fuel -= fuelConsumptionRate * delta;
+
+  // Consumo adicional basado en movimiento de cámara
+  const cameraSpeed = calculateCameraSpeed();
+  fuel -= cameraSpeed * delta * 0.01;
+
+  // Limitar valores
+  fuel = Math.max(0, Math.min(100, fuel));
+
+  // Si combustible llega a 0, finalizar misión automáticamente
+  if (fuel <= 0.5) {
+    fuel = 0;
+    showAlert('COMBUSTIBLE AGOTADO - MISIÓN AUTOMÁTICAMENTE FINALIZADA', 4000);
+    finalizarMision();
+  }
 
   updateFuelUI();
+}
+
+/**
+ * Calcula la velocidad de movimiento de la cámara
+ */
+function calculateCameraSpeed() {
+  if (!camera || !controls) return 0;
+
+  // Velocidad basada en distancia del target
+  const distanceToTarget = camera.position.distanceTo(controls.target);
+  const baseSpeed = 0.5;
+
+  return Math.min(5, baseSpeed + (distanceToTarget * 0.01));
 }
 
 /**
@@ -1045,30 +1154,365 @@ function updateFuelSystem() {
  */
 function updateFuelUI() {
   const fuelElement = document.getElementById('fuel-display');
+  const fuelBar = document.querySelector('.compact-power-level');
+
   if (fuelElement) {
     fuelElement.textContent = `${Math.round(fuel)}%`;
+    fuelElement.className = fuel < 20 ? 'value text-red-400' : 'value text-cyan-200';
+  }
 
-    // Alertas de combustible crítico
-    if (fuel < 20 && missionStarted) {
-      showAlert('COMBUSTIBLE CRÍTICO - REGRESAR A BASE', 3000);
+  if (fuelBar) {
+    fuelBar.style.width = `${fuel}%`;
+
+    // Cambiar color según nivel
+    if (fuel < 20) {
+      fuelBar.style.background = 'linear-gradient(90deg, #ff4444, #ff0000)';
+    } else if (fuel < 50) {
+      fuelBar.style.background = 'linear-gradient(90deg, #ffaa00, #ff8800)';
+    } else {
+      fuelBar.style.background = 'linear-gradient(90deg, #00ff88, #00ccff)';
     }
   }
+
+  // Alertas de combustible crítico
+  if (fuel < 20 && fuel > 0 && missionStarted) {
+    showAlert('⚠️ COMBUSTIBLE CRÍTICO - REGRESAR A BASE', 3000);
+  }
+}
+
+/**
+ * Sistema de energía
+ */
+function updateEnergySystem() {
+  if (!missionStarted || energy <= 0) return;
+
+  // Consumo de energía por tiempo
+  energy -= energyConsumptionRate * 0.1;
+  energy = Math.max(0, Math.min(100, energy));
+
+  // Consumo adicional cuando se explora un planeta
+  if (selectedObject) {
+    energy -= 0.02;
+  }
+
+  updateEnergyUI();
+  updateAllSystems();
+}
+
+/**
+ * Actualiza UI de energía
+ */
+function updateEnergyUI() {
+  const energyElement = document.getElementById('battery-level');
+  const energyBar = document.querySelector('.compact-power-level');
+  const systemStatus = document.getElementById('system-status');
+
+  if (energyElement) {
+    energyElement.textContent = `${Math.round(energy)}%`;
+  }
+
+  if (systemStatus) {
+    if (energy > 70) {
+      systemStatus.innerHTML = '<span class="status-light status-online"></span>SISTEMA ESTABLE';
+    } else if (energy > 40) {
+      systemStatus.innerHTML = '<span class="status-light status-warning"></span>ENERGÍA BAJA';
+    } else if (energy > 0) {
+      systemStatus.innerHTML = '<span class="status-light status-critical"></span>ENERGÍA CRÍTICA';
+    } else {
+      systemStatus.innerHTML = '<span class="status-light status-critical"></span>SISTEMA APAGADO';
+      // Si energía es 0, forzar fin de misión
+      if (missionStarted) {
+        finalizarMision();
+      }
+    }
+  }
+
+  // Actualizar sensores y escudos según energía
+  updateSystemsByEnergy(energy);
+
+  // Efecto visual para la barra de energía
+  if (energyBar) {
+    energyBar.style.width = `${energy}%`;
+
+    // Cambiar color según nivel
+    if (energy < 20) {
+      energyBar.style.background = 'linear-gradient(90deg, #ff4444, #ff0000)';
+      energyBar.style.animation = 'pulse 1s infinite';
+    } else if (energy < 50) {
+      energyBar.style.background = 'linear-gradient(90deg, #ffaa00, #ff8800)';
+      energyBar.style.animation = 'none';
+    } else {
+      energyBar.style.background = 'linear-gradient(90deg, #00ff88, #00ccff)';
+      energyBar.style.animation = 'none';
+    }
+  }
+}
+
+/**
+ * Actualiza sensores y escudos según nivel de energía
+ */
+function updateSystemsByEnergy(energyLevel) {
+  // ESCUDOS - tercer elemento (índice 2 si empieza en 0)
+  const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
+  
+  // SENSORES - cuarto elemento (índice 3 si empieza en 0)
+  const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
+
+  if (!sensorsElement || !shieldsElement) {
+    console.warn('Elementos de sensores o escudos no encontrados');
+    return;
+  }
+
+  // Sensores - más eficientes, consumen menos energía
+  const sensorsLevel = calculateSystemLevel(energyLevel, 'sensors');
+
+  // Escudos - consumen más energía
+  const shieldsLevel = calculateSystemLevel(energyLevel, 'shields');
+
+  // Actualizar UI de sensores
+  updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
+
+  // Actualizar UI de escudos
+  updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
+
+  // Alertas si sistemas están críticos
+  if (missionStarted) {
+    if (sensorsLevel < 30) {
+      showAlert('⚠️ SENSORES CRÍTICOS - VISIBILIDAD REDUCIDA', 2000);
+    }
+    if (shieldsLevel < 20) {
+      showAlert('🛡️ ESCUDOS CRÍTICOS - VULNERABILIDAD ALTA', 2000);
+    }
+  }
+}
+
+/**
+ * Calcula el nivel de un sistema basado en la energía disponible
+ */
+function calculateSystemLevel(energyLevel, systemType) {
+  let level = energyLevel;
+
+  switch (systemType) {
+    case 'sensors':
+      // Sensores son 20% más eficientes
+      level = Math.min(100, energyLevel + 20);
+      // Penalización por baja energía
+      if (energyLevel < 40) level *= 0.7;
+      if (energyLevel < 20) level *= 0.5;
+      break;
+
+    case 'shields':
+      // Escudos consumen 30% más energía
+      level = Math.max(0, energyLevel - 30);
+      // Efectos de baja energía
+      if (energyLevel < 50) level *= 0.8;
+      if (energyLevel < 30) level *= 0.6;
+      if (energyLevel < 10) level = 0;
+      break;
+
+    case 'propulsion':
+      // Propulsión usa energía directamente
+      level = energyLevel;
+      if (energyLevel < 30) level *= 0.6;
+      break;
+
+    case 'navigation':
+      // Navegación menos afectada por baja energía
+      level = Math.min(100, energyLevel + 10);
+      break;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(level)));
+}
+
+/**
+ * Actualiza la UI de un sistema en el panel compacto
+ * (Solo para sistemas que muestran porcentaje, NO para navegación)
+ */
+function updateCompactSystemUI(element, level, systemName) {
+  if (!element) return;
+
+   // Verificar que no sea el elemento de navegación
+  const isNavigation = systemName === 'NAVEGACIÓN';
+  if (isNavigation) {
+    return; // No modificar navegación aquí
+  }
+
+  // Determinar estado basado en nivel
+  let statusClass, statusText;
+
+  if (level > 70) {
+    statusClass = 'status-online';
+    statusText = `${level}%`;
+  } else if (level > 40) {
+    statusClass = 'status-warning';
+    statusText = `${level}%`;
+  } else if (level > 0) {
+    statusClass = 'status-critical';
+    statusText = `${level}%`;
+  } else {
+    statusClass = 'status-critical';
+    statusText = 'OFFLINE';
+  }
+
+  // Actualizar contenido del elemento
+  element.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
+
+  // Actualizar tooltip si existe
+  element.title = `${systemName}: ${level}%`;
+}
+
+/**
+ * Inicializa el estado de navegación en el panel
+ */
+function initializeNavigationSystem() {
+  const navigationElement = document.querySelector('.compact-system:nth-child(2) .compact-system-status');
+  
+  if (navigationElement) {
+    if (missionStarted) {
+      navigationElement.innerHTML = '<span class="status-light status-online"></span>ACTIVA';
+    } else {
+      navigationElement.innerHTML = '<span class="status-light status-warning"></span>INACTIVA';
+    }
+    navigationElement.title = `NAVEGACIÓN: ${missionStarted ? 'ACTIVA' : 'INACTIVA'}`;
+  }
+}
+
+/**
+ * Sistema de recarga de combustible y energía
+ */
+function startRefueling() {
+  if (isRefueling) return;
+
+  isRefueling = true;
+  showAlert('⛽ RECARGANDO COMBUSTIBLE Y ENERGÍA...', 3000);
+
+  refuelInterval = setInterval(() => {
+    // Recargar más rápido cuando está en 0
+    const rechargeRate = fuel === 0 ? 5 : 2;
+
+    fuel += rechargeRate;
+    energy += rechargeRate * 0.8;
+
+    // Limitar máximos
+    fuel = Math.min(100, fuel);
+    energy = Math.min(100, energy);
+
+    updateFuelUI();
+    updateEnergyUI();
+
+    // Si ambos están llenos, detener recarga
+    if (fuel >= 100 && energy >= 100) {
+      stopRefueling();
+      showAlert('✅ RECARGA COMPLETA - SISTEMAS AL 100%', 3000);
+    }
+  }, 500);
+}
+
+/**
+ * Actualiza todos los sistemas basados en la energía disponible
+ */
+function updateAllSystems() {
+  if (!missionStarted) return;
+  
+  // 1. PROPULSIÓN - Mostrar porcentaje
+  const propulsionElement = document.querySelector('.compact-system:nth-child(1) .compact-system-status');
+  if (propulsionElement) {
+    const propulsionLevel = calculateSystemLevel(energy, 'propulsion');
+    updateCompactSystemUI(propulsionElement, propulsionLevel, 'PROPULSIÓN');
+    
+    // Si propulsión es crítica, limitar movimiento
+    if (propulsionLevel < 10 && controlsEnabled) {
+      controls.enableRotate = false;
+      controls.enablePan = false;
+      showAlert('PROPULSIÓN CRÍTICA - MOVIMIENTO LIMITADO', 2000);
+    } else if (controls) {
+      controls.enableRotate = true;
+      controls.enablePan = true;
+    }
+  }
+  
+  // 2. NAVEGACIÓN - Mostrar "ACTIVA" o "INACTIVA" (NO porcentaje)
+  const navigationElement = document.querySelector('.compact-system:nth-child(2) .compact-system-status');
+  if (navigationElement) {
+    if (missionStarted) {
+      navigationElement.innerHTML = '<span class="status-light status-online"></span>ACTIVA';
+    } else {
+      navigationElement.innerHTML = '<span class="status-light status-warning"></span>INACTIVA';
+    }
+    navigationElement.title = `NAVEGACIÓN: ${missionStarted ? 'ACTIVA' : 'INACTIVA'}`;
+  }
+  
+  // 3. ESCUDOS - Mostrar porcentaje
+  const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
+  if (shieldsElement) {
+    const shieldsLevel = calculateSystemLevel(energy, 'shields');
+    updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
+  }
+  
+  // 4. SENSORES - Mostrar porcentaje
+  const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
+  if (sensorsElement) {
+    const sensorsLevel = calculateSystemLevel(energy, 'sensors');
+    updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
+  }
+}
+
+/**
+ * Detener recarga
+ */
+function stopRefueling() {
+  if (refuelInterval) {
+    clearInterval(refuelInterval);
+    refuelInterval = null;
+  }
+  isRefueling = false;
 }
 
 /**
  * Mensajes de comunicación
  */
 function showCommunicationMessage() {
-  if (!missionStarted) return;
+  // Mostrar mensajes solo cuando la misión está activa
+  // O mostrar mensajes menos frecuentes cuando está inactiva
+  if (!missionStarted && Math.random() > 0.3) return; // 70% de probabilidad de no mostrar cuando inactivo
 
   const message = communicationMessages[Math.floor(Math.random() * communicationMessages.length)];
   const commElement = document.getElementById('comms-display');
 
   if (commElement) {
-    commElement.textContent = `COM: ${message}`;
-    setTimeout(() => {
-      if (commElement) commElement.textContent = 'COM: Esperando transmisión...';
-    }, 5000);
+    // Efecto de "transmisión entrante"
+    commElement.classList.add('transmitting');
+
+    // Mostrar el mensaje con efecto
+    gsap.to(commElement, {
+      duration: 0.3,
+      opacity: 0,
+      onComplete: () => {
+        commElement.textContent = `COM: ${message}`;
+        gsap.to(commElement, {
+          duration: 0.3,
+          opacity: 1
+        });
+
+        // Después de 5 segundos, volver a "esperando"
+        setTimeout(() => {
+          if (commElement && !missionStarted) {
+            gsap.to(commElement, {
+              duration: 0.3,
+              opacity: 0,
+              onComplete: () => {
+                commElement.textContent = 'COM: Esperando transmisión...';
+                gsap.to(commElement, {
+                  duration: 0.3,
+                  opacity: 1
+                });
+              }
+            });
+          }
+        }, 5000);
+      }
+    });
   }
 }
 
