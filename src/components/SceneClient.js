@@ -170,6 +170,15 @@ let lastFuelUpdate = Date.now();
 let isRefueling = false;
 let refuelInterval = null;
 
+// Variables para sistema de daño solar
+let solarDamageEnabled = true;
+let shieldDamageRate = 0.1; // % por segundo cerca del Sol
+let solarWarningDistance = 25; // Distancia para advertencia
+let solarDangerDistance = 15; // Distancia para daño
+let lastShieldDamageTime = Date.now();
+let inSolarDangerZone = false;
+let shields = 100; // Nivel de escudos separado de energía
+
 const ROTACION_VELOCIDAD = 0.005;
 const lookAtTarget = new THREE.Vector3();
 
@@ -662,6 +671,11 @@ function animate() {
     }
   }
 
+  // VERIFICAR PROXIMIDAD AL SOL 
+  if (missionStarted && solarDamageEnabled) {
+    checkSolarProximity();
+  }
+
   // También agregar rotación durante la misión (cuando no están orbitando)
   if (missionStarted) {
     planetMeshes.forEach((mesh, i) => {
@@ -728,6 +742,10 @@ function comenzarMision() {
     showAlert(`❌ COMBUSTIBLE INSUFICIENTE: ${Math.round(fuel)}% - MÍNIMO 50% REQUERIDO`, 4000);
     return;
   }
+
+  // Inicializar escudos al 100%
+  shields = 100;
+  inSolarDangerZone = false;
 
   // Verificar que haya suficiente energía
   if (energy < 30) {
@@ -808,6 +826,15 @@ function comenzarMision() {
 function finalizarMision() {
   console.log('Finalizando misión...');
   missionStarted = false;
+
+  // Resetear sistema de daño solar
+  inSolarDangerZone = false;
+  
+  // Ocultar efectos solares
+  const solarEffect = document.getElementById('solar-damage-effect');
+  if (solarEffect) {
+    solarEffect.style.opacity = 0;
+  }
 
   // Actualizar estado de navegación
   actualizarEstadoNavegacion('inactiva');
@@ -1067,10 +1094,16 @@ function initRealTimeSystems() {
   // Sistema de energía (cada 500ms)
   setInterval(updateEnergySystem, 500);
 
+  // Sistema de daño solar (cada 500ms)
+  setInterval(() => {
+    if (missionStarted) {
+      checkSolarProximity();
+    }
+  }, 500);
+
   // Alertas contextuales
   setInterval(generateContextualAlerts, 3000);
 
-  // Comunicaciones
   // Comunicaciones - PRIMER MENSAJE
   setTimeout(() => {
     showCommunicationMessage();
@@ -1252,29 +1285,26 @@ function updateEnergyUI() {
  * Actualiza sensores y escudos según nivel de energía
  */
 function updateSystemsByEnergy(energyLevel) {
-  // ESCUDOS - tercer elemento (índice 2 si empieza en 0)
+  const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
   const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
   
-  // SENSORES - cuarto elemento (índice 3 si empieza en 0)
-  const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
-
   if (!sensorsElement || !shieldsElement) {
-    console.warn('Elementos de sensores o escudos no encontrados');
+    console.warn('⚠️ Elementos de sensores o escudos no encontrados');
     return;
   }
-
-  // Sensores - más eficientes, consumen menos energía
+  
+  // Sensores - basados en energía
   const sensorsLevel = calculateSystemLevel(energyLevel, 'sensors');
-
-  // Escudos - consumen más energía
-  const shieldsLevel = calculateSystemLevel(energyLevel, 'shields');
-
+  
+  // ESCUDOS - usar la variable shields (afectada por daño solar)
+  const shieldsLevel = Math.max(0, Math.min(100, shields));
+  
   // Actualizar UI de sensores
   updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
-
+  
   // Actualizar UI de escudos
   updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
-
+  
   // Alertas si sistemas están críticos
   if (missionStarted) {
     if (sensorsLevel < 30) {
@@ -1282,6 +1312,9 @@ function updateSystemsByEnergy(energyLevel) {
     }
     if (shieldsLevel < 20) {
       showAlert('🛡️ ESCUDOS CRÍTICOS - VULNERABILIDAD ALTA', 2000);
+    }
+    if (shieldsLevel <= 0) {
+      showAlert('💥 ESCUDOS DESTRUIDOS - EXPUESTO A RADIACIÓN SOLAR', 3000);
     }
   }
 }
@@ -1583,17 +1616,26 @@ function updateRadar() {
  */
 function generateContextualAlerts() {
   if (!missionStarted || !camera) return;
-
-  // Alerta de temperatura cerca del Sol
+  
+  // Alerta de temperatura cerca del Sol (mantener esta)
   const distanceToSun = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-  if (distanceToSun < 15) {
-    showAlert('ALERTA: TEMPERATURA CRÍTICA - ALEJARSE DEL SOL', 2000);
+  
+  if (distanceToSun < solarWarningDistance && distanceToSun >= solarDangerDistance) {
+    // Solo mostrar cada 10 segundos para no saturar
+    if (Math.random() < 0.2) {
+      showAlert('🌡️ PROXIMIDAD AL SOL - TEMPERATURA AUMENTANDO', 2000);
+    }
   }
-
-  // Alerta de cinturón de asteroides
+  
+  // Alerta de escudos bajos por daño solar
+  if (inSolarDangerZone && shields < 50 && Math.random() < 0.3) {
+    showAlert('🔥 DAÑO SOLAR DETECTADO - ESCUDOS BAJANDO', 2000);
+  }
+  
+  // Alerta de cinturón de asteroides (mantener esta)
   const inAsteroidBelt = camera.position.x > 35 && camera.position.x < 45;
   if (inAsteroidBelt && Math.random() < 0.1) {
-    showAlert('PRECAUCIÓN: PROXIMIDAD A ASTEROIDES', 1500);
+    showAlert('🪨 PRECAUCIÓN: PROXIMIDAD A ASTEROIDES', 1500);
   }
 }
 
@@ -2163,6 +2205,212 @@ function hidePlanetInfoPanel() {
         controls.enabled = true;
       }
       controlsEnabled = true;
+    }
+  });
+}
+
+/**
+ * Actualiza la UI de los escudos
+ */
+function updateShieldsUI() {
+  const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
+  
+  if (shieldsElement) {
+    const shieldsLevel = Math.round(shields);
+    
+    // Determinar clase de estado
+    let statusClass = 'status-online';
+    if (shieldsLevel < 40) statusClass = 'status-warning';
+    if (shieldsLevel < 20) statusClass = 'status-critical';
+    if (shieldsLevel <= 0) statusClass = 'status-critical';
+    
+    // Determinar texto
+    let statusText = `${shieldsLevel}%`;
+    if (shieldsLevel <= 0) statusText = 'DESTRUIDOS';
+    
+    // Actualizar elemento
+    shieldsElement.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
+    shieldsElement.title = `ESCUDOS: ${shieldsLevel}%${inSolarDangerZone ? ' (DAÑO SOLAR)' : ''}`;
+    
+    // Efecto visual si escudos están bajos
+    if (shieldsLevel < 30 && missionStarted) {
+      shieldsElement.style.animation = 'pulse 1s infinite';
+    } else {
+      shieldsElement.style.animation = 'none';
+    }
+  }
+}
+
+/**
+ * Verifica la proximidad al Sol y aplica daño a escudos si es necesario
+ */
+function checkSolarProximity() {
+  if (!missionStarted || !camera || !solarDamageEnabled) return;
+  
+  // Calcular distancia al Sol (posición 0,0,0)
+  const distanceToSun = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+  
+  // Verificar si estamos en zona de peligro
+  const wasInDangerZone = inSolarDangerZone;
+  inSolarDangerZone = distanceToSun < solarDangerDistance;
+  
+  // Si acabamos de entrar en zona de peligro, mostrar alerta
+  if (inSolarDangerZone && !wasInDangerZone) {
+    showAlert('⚠️ ZONA DE PELIGRO SOLAR - ESCUDOS BAJANDO', 3000);
+  }
+  
+  // Si salimos de la zona de peligro, mostrar alerta de recuperación
+  if (!inSolarDangerZone && wasInDangerZone) {
+    showAlert('✅ SALIENDO DE ZONA SOLAR - ESCUDOS SE RECUPERAN', 2000);
+  }
+  
+  // Mostrar advertencia si estamos cerca pero no en peligro
+  if (distanceToSun < solarWarningDistance && distanceToSun >= solarDangerDistance) {
+    showAlert('🌡️ PROXIMIDAD AL SOL - MANTENER DISTANCIA', 2000);
+  }
+  
+  // Aplicar daño a escudos si estamos en zona de peligro
+  if (inSolarDangerZone && missionStarted) {
+    applySolarDamage(distanceToSun);
+  } else if (shields < 100) {
+    // Recuperar escudos si no estamos en peligro
+    recoverShields();
+  }
+  // Mostrar efectos visuales si estamos cerca del Sol
+  if (inSolarDangerZone) {
+    showSolarDamageEffects();
+  } else {
+    // Ocultar efectos
+    const solarEffect = document.getElementById('solar-damage-effect');
+    if (solarEffect) {
+      solarEffect.style.opacity = 0;
+    }
+  }
+  
+  // Actualizar UI de escudos
+  updateShieldsUI();
+}
+
+/**
+ * Aplica daño a los escudos basado en la proximidad al Sol
+ */
+function applySolarDamage(distanceToSun) {
+  const now = Date.now();
+  const delta = (now - lastShieldDamageTime) / 1000; // Segundos
+  
+  // Daño basado en distancia (más cerca = más daño)
+  const distanceFactor = 1 - (distanceToSun / solarDangerDistance);
+  const damage = shieldDamageRate * delta * distanceFactor * 10;
+  
+  // Reducir escudos
+  shields = Math.max(0, shields - damage);
+  lastShieldDamageTime = now;
+  
+  // Si los escudos están críticos, mostrar alertas
+  if (shields < 30 && shields > 0) {
+    showAlert('🛡️ ESCUDOS CRÍTICOS - ALEJARSE DEL SOL INMEDIATAMENTE', 2000);
+  }
+  
+  // Si los escudos llegan a 0
+  if (shields <= 0 && missionStarted) {
+    shields = 0;
+    showAlert('💥 ESCUDOS DESTRUIDOS - SISTEMAS EN PELIGRO', 4000);
+    
+    // Aplicar daño directo a la nave (energía y combustible)
+    applyDirectDamage();
+  }
+}
+
+/**
+ * Aplica daño directo a la nave cuando los escudos están destruidos
+ */
+function applyDirectDamage() {
+  // Daño a energía cuando no hay escudos
+  energy -= 0.5;
+  energy = Math.max(0, energy);
+  
+  // Daño a combustible cuando no hay escudos
+  fuel -= 0.3;
+  fuel = Math.max(0, fuel);
+  
+  // Actualizar UIs
+  updateEnergyUI();
+  updateFuelUI();
+  
+  // Si la energía o combustible son críticos
+  if (energy < 20) {
+    showAlert('🔋 ENERGÍA CRÍTICA - PELIGRO DE APAGÓN', 2000);
+  }
+  
+  if (fuel < 20) {
+    showAlert('⛽ COMBUSTIBLE CRÍTICO - PROPULSIÓN COMPROMETIDA', 2000);
+  }
+}
+
+/**
+ * Recupera escudos cuando no hay peligro solar
+ */
+function recoverShields() {
+  const recoveryRate = 0.05; // % por segundo
+  
+  // Solo recuperar si no estamos en misión o si estamos lejos del Sol
+  if (!missionStarted || !inSolarDangerZone) {
+    shields += recoveryRate;
+    shields = Math.min(100, shields);
+  }
+}
+
+/**
+ * Muestra efectos visuales de daño solar
+ */
+function showSolarDamageEffects() {
+  // Crear o obtener el elemento de efecto
+  let solarEffect = document.getElementById('solar-damage-effect');
+  
+  if (!solarEffect) {
+    solarEffect = document.createElement('div');
+    solarEffect.id = 'solar-damage-effect';
+    solarEffect.className = 'solar-damage-effect';
+    document.body.appendChild(solarEffect);
+  }
+  
+  // Calcular intensidad basada en proximidad y estado de escudos
+  const distanceToSun = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+  const proximityFactor = 1 - Math.min(1, distanceToSun / solarDangerDistance);
+  const shieldFactor = shields / 100;
+  
+  // Intensidad del efecto (0 a 1)
+  const intensity = proximityFactor * (1 - shieldFactor);
+  
+  // Aplicar efecto
+  solarEffect.style.opacity = Math.max(0, Math.min(0.7, intensity));
+  
+  // Destello aleatorio si los escudos están muy bajos
+  if (shields < 10 && Math.random() < 0.1) {
+    showSolarFlash();
+  }
+}
+
+/**
+ * Muestra un destello solar
+ */
+function showSolarFlash() {
+  const flash = document.createElement('div');
+  flash.className = 'flash-effect';
+  document.body.appendChild(flash);
+  
+  // Animación del destello
+  gsap.to(flash, {
+    duration: 0.1,
+    opacity: 0.8,
+    onComplete: () => {
+      gsap.to(flash, {
+        duration: 0.3,
+        opacity: 0,
+        onComplete: () => {
+          flash.remove();
+        }
+      });
     }
   });
 }

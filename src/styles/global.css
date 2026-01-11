@@ -1114,3 +1114,50 @@ button:hover {
   color: #ff4444 !important;
   animation: blink 1s infinite;
 }
+
+/* Efecto de daño solar */
+.solar-damage-effect {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 100, 0, 0.1) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+/* Efecto de escudos críticos */
+.shields-critical {
+  animation: shieldPulse 0.5s infinite !important;
+}
+
+@keyframes shieldPulse {
+  0%, 100% { 
+    opacity: 1;
+    color: #ff4444;
+  }
+  50% { 
+    opacity: 0.5;
+    color: #ff0000;
+  }
+}
+
+/* Efecto de destello solar */
+.flash-effect {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 200, 0, 0.3);
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0;
+}
