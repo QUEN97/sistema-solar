@@ -1583,8 +1583,11 @@ function updateRadar() {
 
     // Mapear posición 3D a coordenadas 2D del radar
     const maxDistance = 80;
-    const normalizedX = 50 + (planet.position.x / maxDistance) * 40;
-    const normalizedY = 50 + (planet.position.z / maxDistance) * 40;
+    
+    // Usar posición actual del planeta (funciona con o sin misión)
+    const planetPos = planet.position;
+    const normalizedX = 50 + (planetPos.x / maxDistance) * 40;
+    const normalizedY = 50 + (planetPos.z / maxDistance) * 40;
 
     // Asegurar que esté dentro del radar
     const x = Math.max(10, Math.min(90, normalizedX));
@@ -1610,6 +1613,10 @@ function updateRadar() {
     radar.appendChild(blip);
   });
 }
+// Iniciar radar inmediatamente al cargar
+setTimeout(() => {
+  initRadarSystem();
+}, 1000);
 
 /**
  * Alertas contextuales
