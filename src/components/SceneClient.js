@@ -160,6 +160,7 @@ let audioStarted = false;
 let typewriterTimeout = null;
 
 // Variables para sistemas dinámicos
+// Variables para sistemas dinámicos
 let fuel = 100;
 let energy = 100;
 let missionStartTime = null;
@@ -420,7 +421,7 @@ function crearPlanetas() {
     if (p.nombre === 'Urano') {
       mesh.rotation.x = Math.PI / 2; // Rotado 90 grados
     } else if (p.nombre === 'Venus') {
-      mesh.rotation.x = Math.PI; // Venus rota en sentido contrario
+      //mesh.rotation.x = Math.PI; // Venus rota en sentido contrario
     }
 
     scene.add(mesh);
@@ -805,8 +806,12 @@ function comenzarMision() {
   // Habilitar controles de navegación
   if (controls) {
     controls.enabled = true;
+    controlsEnabled = true;
   }
-  controlsEnabled = true;
+  
+  if (renderer && renderer.domElement) {
+    renderer.domElement.style.pointerEvents = 'auto';
+  }
 
   // if (renderer) {
   //   renderer.domElement.style.pointerEvents = 'auto';
@@ -898,9 +903,6 @@ function finalizarMision() {
     controls.enabled = false;
   }
   controlsEnabled = false;
-  if (renderer) {
-    renderer.domElement.style.pointerEvents = 'none';
-  }
 
   // Actualizar interfaz
   const comenzarBtn = document.getElementById('comenzar-btn');
@@ -1318,24 +1320,24 @@ function updateSystemsByEnergy(energyLevel) {
   // Sensores - basados en energía
   const sensorsLevel = calculateSystemLevel(energyLevel, 'sensors');
   
-  // ESCUDOS - usar la variable shields pero ajustar fuera de misión
-  const displayShields = missionStarted ? shields : Math.max(80, shields);
+  // ESCUDOS - usar la variable shields (afectada por daño solar)
+  const shieldsLevel = Math.max(0, Math.min(100, shields));
   
   // Actualizar UI de sensores
   updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
   
   // Actualizar UI de escudos
-  updateCompactSystemUI(shieldsElement, displayShields, 'ESCUDOS');
+  updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
   
   // Alertas si sistemas están críticos
   if (missionStarted) {
     if (sensorsLevel < 30) {
       showAlert('⚠️ SENSORES CRÍTICOS - VISIBILIDAD REDUCIDA', 2000);
     }
-    if (displayShields < 20) {
+    if (shieldsLevel < 20) {
       showAlert('🛡️ ESCUDOS CRÍTICOS - VULNERABILIDAD ALTA', 2000);
     }
-    if (displayShields <= 0) {
+    if (shieldsLevel <= 0) {
       showAlert('💥 ESCUDOS DESTRUIDOS - EXPUESTO A RADIACIÓN SOLAR', 3000);
     }
   }
@@ -1415,7 +1417,7 @@ function updateCompactSystemUI(element, level, systemName) {
       statusClass = 'status-online';
       statusText = `${Math.round(level)}%`;
     }
-  } 
+  }
 
   // Actualizar contenido del elemento
   element.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
@@ -1927,6 +1929,18 @@ function showExploreButton(object) {
   if (!exploreBtn) return;
 
   try {
+    // Obtener nombre del objeto
+    const objectName = object.userData?.nombre || 
+                      (object === lunaMesh ? 'Luna' : 
+                      (object === issMesh ? 'ISS' : 'Objeto'));
+    
+    // Actualizar el texto del botón con el nombre
+    const exploreText = exploreBtn.querySelector('span:first-child');
+    const objectNameSpan = exploreBtn.querySelector('.object-name');
+    
+    if (exploreText) exploreText.textContent = 'EXPLORAR';
+    if (objectNameSpan) objectNameSpan.textContent = objectName;
+
     // Obtener la posición mundial del objeto
     const worldPosition = new THREE.Vector3();
     object.getWorldPosition(worldPosition);
@@ -1992,7 +2006,12 @@ function showExploreButton(object) {
  */
 function hideExploreButton() {
   const exploreBtn = document.getElementById('explore-btn');
-  if (exploreBtn) exploreBtn.style.display = 'none';
+  if (exploreBtn) {
+    exploreBtn.style.display = 'none';
+    // Limpiar el nombre del objeto
+    const objectNameSpan = exploreBtn.querySelector('.object-name');
+    if (objectNameSpan) objectNameSpan.textContent = '';
+  }
 }
 
 /**
@@ -2001,6 +2020,13 @@ function hideExploreButton() {
 function explorarObjeto(object) {
   if (!object) return;
 
+  // Limpiar nombre en el botón
+  const exploreBtn = document.getElementById('explore-btn');
+  if (exploreBtn) {
+    const objectNameSpan = exploreBtn.querySelector('.object-name');
+    if (objectNameSpan) objectNameSpan.textContent = '';
+  }
+  
   // 1. Guardar la posición original del objeto ANTES de ocultar otros
   const objectWorldPos = new THREE.Vector3();
   object.getWorldPosition(objectWorldPos);
@@ -2345,7 +2371,7 @@ function hidePlanetInfoPanel() {
  * Actualiza la UI de los escudos
  */
 function updateShieldsUI() {
-  const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
+ const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
   
   if (shieldsElement) {
     const shieldsLevel = Math.round(shields);

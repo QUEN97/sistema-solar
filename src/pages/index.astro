@@ -4,152 +4,169 @@ import { hudController } from "../components/SceneClient.js";
 ---
 
 <html lang="es">
-	<head>
-		<meta charset="UTF-8" />
-		<title>Sistema Solar HUD</title>
-		<link rel="stylesheet" href="/src/styles/global.css" />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
-			rel="stylesheet"
-		/>
-		<script type="module" src="../src/components/SceneClient.js" defer></script>
-		<script src="https://unpkg.com/alpinejs" defer></script>
-	</head>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Sistema Solar HUD</title>
+        <link rel="stylesheet" href="/src/styles/global.css" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+        <script type="module" src="../src/components/SceneClient.js" defer
+        ></script>
+        <script src="https://unpkg.com/alpinejs" defer></script>
+    </head>
 
-	<body class="bg-black text-white min-h-screen overflow-hidden relative">
-    <!-- Escena 3D del sistema solar -->
-    <Scene client:load style="position: absolute; z-index: 1;" />
+    <body class="bg-black text-white min-h-screen overflow-hidden relative">
+        <!-- Escena 3D del sistema solar -->
+        <Scene client:load style="position: absolute; z-index: 1;" />
 
-    <!-- Cabina de Nave Espacial -->
-    <div class="spaceship-cockpit" x-data="hudController()" x-init="init()">
-        <!-- Marco perimetral sutil -->
-        <div class="cockpit-frame"></div>
+        <!-- Cabina de Nave Espacial -->
+        <div class="spaceship-cockpit" x-data="hudController()" x-init="init()">
+            <!-- Marco perimetral sutil -->
+            <div class="cockpit-frame"></div>
 
-        <!-- Partículas de cabina -->
-        <div class="cockpit-particles" id="cockpit-particles"></div>
+            <!-- Partículas de cabina -->
+            <div class="cockpit-particles" id="cockpit-particles"></div>
 
-        <!-- Reloj de Navegación Estelar -->
-        <div class="stellar-clock">
-            <div class="clock-display">
-                <div class="stellar-date" id="current-date">--/--/----</div>
-                <div class="stellar-time" id="current-time">--:--:--</div>
+            <!-- Reloj de Navegación Estelar -->
+            <div class="stellar-clock">
+                <div class="clock-display">
+                    <div class="stellar-date" id="current-date">--/--/----</div>
+                    <div class="stellar-time" id="current-time">--:--:--</div>
+                </div>
             </div>
-        </div>
 
-        <!-- Consola de Navegación -->
-        <div class="navigation-console">
-            <h3 class="text-cyan-300 text-center text-sm mb-2">
-                RADAR SISTEMA SOLAR
-            </h3>
-            <div class="radar-display">
-                <div class="radar-sweep"></div>
-                <!-- Los blips del radar se generan dinámicamente -->
+            <!-- Consola de Navegación -->
+            <div class="navigation-console">
+                <h3 class="text-cyan-300 text-center text-sm mb-2">
+                    RADAR SISTEMA SOLAR
+                </h3>
+                <div class="radar-display">
+                    <div class="radar-sweep"></div>
+                    <!-- Los blips del radar se generan dinámicamente -->
+                </div>
             </div>
-        </div>
 
-        <!-- Panel de Control Compacto en esquina inferior izquierda -->
-        <div class="compact-control-panel">
-            <div class="compact-systems">
-                <div class="compact-system">
-                    <div class="compact-system-label">PROPULSIÓN</div>
-                    <div class="compact-system-status">
-                        <span class="status-light status-online"></span>ONLINE
+            <!-- Panel de Control Compacto en esquina inferior izquierda -->
+            <div class="compact-control-panel">
+                <div class="compact-systems">
+                    <div class="compact-system">
+                        <div class="compact-system-label">PROPULSIÓN</div>
+                        <div class="compact-system-status">
+                            <span class="status-light status-online"
+                            ></span>ONLINE
+                        </div>
+                    </div>
+                    <div class="compact-system">
+                        <div class="compact-system-label">NAVEGACIÓN</div>
+                        <div class="compact-system-status">
+                            <span class="status-light status-warning"
+                            ></span>INACTIVA
+                        </div>
+                    </div>
+                    <div class="compact-system">
+                        <div class="compact-system-label">ESCUDOS</div>
+                        <div class="compact-system-status">
+                            <span class="status-light status-warning"></span>85%
+                        </div>
+                    </div>
+                    <div class="compact-system">
+                        <div class="compact-system-label">SENSORES</div>
+                        <div class="compact-system-status">
+                            <span class="status-light status-online"></span>100%
+                        </div>
                     </div>
                 </div>
-                <div class="compact-system">
-                    <div class="compact-system-label">NAVEGACIÓN</div>
-                    <div class="compact-system-status">
-                        <span class="status-light status-warning"></span>INACTIVA
+
+                <div class="compact-energy-display">
+                    <span class="text-cyan-200 text-xs">ENERGÍA:</span>
+                    <div class="compact-power-indicator">
+                        <div class="compact-power-level" style="width: 75%;">
+                        </div>
+                    </div>
+                    <span id="battery-level" class="text-cyan-200 text-xs"
+                        >75%</span
+                    >
+                </div>
+
+                <div class="compact-systems-status">
+                    <div class="compact-system-row">
+                        <span class="label">COMBUSTIBLE:</span>
+                        <span id="fuel-display" class="value">100%</span>
+                    </div>
+                    <div class="compact-system-row">
+                        <span class="label">COORDENADAS:</span>
+                        <span id="coords-display" class="value"
+                            >X0.00 Y0.00 Z0.00</span
+                        >
+                    </div>
+                    <div class="compact-system-row">
+                        <span class="label">COMUNICACIONES:</span>
+                        <span id="comms-display" class="value"
+                            >Esperando...</span
+                        >
                     </div>
                 </div>
-                <div class="compact-system">
-                    <div class="compact-system-label">ESCUDOS</div>
-                    <div class="compact-system-status">
-                        <span class="status-light status-warning"></span>85%
-                    </div>
-                </div>
-                <div class="compact-system">
-                    <div class="compact-system-label">SENSORES</div>
-                    <div class="compact-system-status">
-                        <span class="status-light status-online"></span>100%
-                    </div>
-                </div>
-            </div>
-            
-            <div class="compact-energy-display">
-                <span class="text-cyan-200 text-xs">ENERGÍA:</span>
-                <div class="compact-power-indicator">
-                    <div class="compact-power-level" style="width: 75%;"></div>
-                </div>
-                <span id="battery-level" class="text-cyan-200 text-xs">75%</span>
-            </div>
-            
-            <div class="compact-systems-status">
-                <div class="compact-system-row">
-                    <span class="label">COMBUSTIBLE:</span>
-                    <span id="fuel-display" class="value">100%</span>
-                </div>
-                <div class="compact-system-row">
-                    <span class="label">COORDENADAS:</span>
-                    <span id="coords-display" class="value">X0.00 Y0.00 Z0.00</span>
-                </div>
-                <div class="compact-system-row">
-                    <span class="label">COMUNICACIONES:</span>
-                    <span id="comms-display" class="value">Esperando...</span>
+
+                <div id="system-status" class="text-cyan-200 text-xs mt-2">
+                    <span class="status-light status-online"></span>
+                    SISTEMA ESTABLE
                 </div>
             </div>
 
-            <div id="system-status" class="text-cyan-200 text-xs mt-2">
-                <span class="status-light status-online"></span>
-                SISTEMA ESTABLE
+            <!-- Botones de misión en el centro inferior -->
+            <div class="mission-button-container">
+                <button
+                    @click="comenzarMision()"
+                    id="comenzar-btn"
+                    class="cockpit-btn"
+                >
+                    INICIAR MISIÓN
+                </button>
+                <button
+                    @click="finalizarMision()"
+                    id="finalizar-btn"
+                    class="cockpit-btn"
+                    style="display: none;"
+                >
+                    FINALIZAR MISIÓN
+                </button>
             </div>
-        </div>
 
-        <!-- Botones de misión en el centro inferior -->
-        <div class="mission-button-container">
-            <button
-                @click="comenzarMision()"
-                id="comenzar-btn"
-                class="cockpit-btn">
-                INICIAR MISIÓN
+            <!-- Panel de Alertas -->
+            <div class="alert-panel" style="display: none;" id="alert-panel">
+                <div class="alert-message" id="alert-message">
+                    ALERTA: SISTEMA EN MODO EXPLORACIÓN
+                </div>
+            </div>
+
+            <!-- Botón de explorar -->
+            <button id="explore-btn" style="display: none;">
+                <span>EXPLORAR</span>
+                <span class="object-name"></span>
             </button>
-            <button
-                @click="finalizarMision()"
-                id="finalizar-btn"
-                class="cockpit-btn"
-                style="display: none;">
-                FINALIZAR MISIÓN
+        </div>
+
+        <!-- Paneles de información de planetas -->
+        <div
+            id="planet-info-panel"
+            class="fixed right-4 top-1/2 transform -translate-y-1/2 bg-gray-900 bg-opacity-90 border border-cyan-400 rounded-lg p-6 w-80"
+            style="display: none; z-index: 200; backdrop-filter: blur(10px);"
+        >
+            <!-- El contenido se llena dinámicamente -->
+        </div>
+
+        <div
+            id="planet-funfacts-panel"
+            class="fixed left-4 top-1/2 transform -translate-y-1/2 bg-gray-900 bg-opacity-90 border border-cyan-400 rounded-lg p-6 w-80"
+            style="display: none; z-index: 200; backdrop-filter: blur(10px);"
+        >
+            <h3 class="text-cyan-300 text-lg font-bold mb-4">DATO CURIOSO</h3>
+            <p class="planet-funfact text-cyan-100 text-sm leading-relaxed"></p>
+            <button onclick="hidePlanetInfoPanel()" class="hud-btn mt-6 w-full">
+                CERRAR
             </button>
         </div>
-
-        <!-- Panel de Alertas -->
-        <div class="alert-panel" style="display: none;" id="alert-panel">
-            <div class="alert-message" id="alert-message">
-                ALERTA: SISTEMA EN MODO EXPLORACIÓN
-            </div>
-        </div>
-        
-        <!-- Botón de explorar -->
-        <button id="explore-btn" style="display: none;">EXPLORAR</button>
-    </div>
-
-    <!-- Paneles de información de planetas -->
-    <div
-        id="planet-info-panel"
-        class="fixed right-4 top-1/2 transform -translate-y-1/2 bg-gray-900 bg-opacity-90 border border-cyan-400 rounded-lg p-6 w-80"
-        style="display: none; z-index: 200; backdrop-filter: blur(10px);">
-        <!-- El contenido se llena dinámicamente -->
-    </div>
-
-    <div
-        id="planet-funfacts-panel"
-        class="fixed left-4 top-1/2 transform -translate-y-1/2 bg-gray-900 bg-opacity-90 border border-cyan-400 rounded-lg p-6 w-80"
-        style="display: none; z-index: 200; backdrop-filter: blur(10px);">
-        <h3 class="text-cyan-300 text-lg font-bold mb-4">DATO CURIOSO</h3>
-        <p class="planet-funfact text-cyan-100 text-sm leading-relaxed"></p>
-        <button onclick="hidePlanetInfoPanel()" class="hud-btn mt-6 w-full">
-            CERRAR
-        </button>
-    </div>
-</body>
+    </body>
 </html>

@@ -337,6 +337,29 @@ button:hover {
   }
 }
 
+/* Estilos para el nombre del objeto en el botón EXPLORAR */
+#explore-btn .object-name {
+  display: block;
+  font-size: 0.6rem;
+  color: rgba(0, 240, 255, 0.8);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-shadow: 0 0 4px rgba(0, 240, 255, 0.5);
+  animation: objectNameFadeIn 0.3s ease-out;
+}
+
+@keyframes objectNameFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* === EFECTOS DE SELECCIÓN DE PLANETA === */
 .planet-selected {
   animation: planetPulse 2s infinite ease-in-out;
