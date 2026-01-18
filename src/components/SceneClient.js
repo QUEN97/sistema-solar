@@ -184,6 +184,8 @@ let autoRecoveryEnabled = true;
 let autoRecoveryInterval = null;
 let recoverySpeed = 0.5; // % por segundo
 
+let orientationCheckInterval = null;
+
 const ROTACION_VELOCIDAD = 0.005;
 const lookAtTarget = new THREE.Vector3();
 
@@ -212,14 +214,36 @@ export function initScene() {
     return;
   }
 
-  // Configuración del canvas
-  canvas.style.position = 'absolute';
+  // Configuración del canvas para móviles
+  canvas.style.position = 'fixed';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.width = '100vw';
+  canvas.style.height = '100vh';
   canvas.style.zIndex = '1';
   canvas.style.pointerEvents = 'auto';
+
+  // Detectar si es móvil
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   // Crear escena, cámara y renderizador
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+  // Posición inicial basada en dispositivo
+  if (isMobile && window.innerWidth < window.innerHeight) {
+    // Vertical - vista más cercana
+    camera.position.set(0, 5, 35);
+  } else if (isMobile) {
+    // Horizontal - vista óptima
+    camera.position.set(0, 8, 45);
+  } else {
+    // Desktop
+    camera.position.set(0, 10, 60);
+  }
+
+  // Configurar orientación para móviles
+  // setupMobileOrientation();
+
   camera.position.set(0, 10, 60);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -281,6 +305,14 @@ export function initScene() {
 
   // Configurar eventos y animación
   onWindowResize();
+  // Inicializar HUD para móviles
+  updateHUDForMobile();
+
+  // Verificar orientación al iniciar
+  if (window.innerHeight > window.innerWidth) {
+    showOrientationAlert();
+  }
+
   animate();
 
   // Eventos del sistema
@@ -360,19 +392,112 @@ function startAudio() {
 function onWindowResize() {
   if (!camera || !renderer) return;
 
-  camera.aspect = window.innerWidth / window.innerHeight;
+  // Obtener dimensiones reales de la ventana
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(width, height);
 
   // Ajustes específicos para dispositivos móviles
-  if (window.innerWidth < 768) {
-    camera.position.z = 40;
-    camera.position.y = 8;
-  } else {
-    camera.position.z = 60;
-    camera.position.y = 10;
+  if (!missionStarted) {
+    if (width < 768 || height > width) {
+      // Modo vertical - ajustar para vista general
+      camera.position.z = 35;
+      camera.position.y = 5;
+
+      // Forzar orientación horizontal si está en vertical
+      if (height > width && !missionStarted) {
+        showOrientationAlert();
+      }
+    } else {
+      // Modo horizontal - vista óptima
+      camera.position.z = 50;
+      camera.position.y = 8;
+    }
+  }
+   
+  if (controls) {
+    controls.update();
+  }
+  if (!missionStarted) {
+    updateHUDForMobile();
   }
 }
+
+function showOrientationAlert() {
+  if (document.getElementById('orientation-alert')) return;
+
+  const alert = document.createElement('div');
+  alert.id = 'orientation-alert';
+  alert.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-family: 'Orbitron', sans-serif;
+  `;
+
+  alert.innerHTML = `
+    <h2 style="color: #00f0ff; margin-bottom: 20px; font-size: 1.5rem;">GIRA TU DISPOSITIVO</h2>
+    <p style="color: #ccc; margin-bottom: 30px; font-size: 1rem;">
+      Para una mejor experiencia, usa el dispositivo en modo horizontal
+    </p>
+    <div style="font-size: 3rem;">↻</div>
+    <p style="color: #00ffaa; margin-top: 30px; font-size: 0.9rem;">
+      El sistema solar se verá mejor en orientación horizontal
+    </p>
+  `;
+
+  document.body.appendChild(alert);
+
+  // Escuchar cambios de orientación
+  window.addEventListener('orientationchange', function () {
+    if (window.innerWidth > window.innerHeight) {
+      alert.remove();
+      onWindowResize(); // Reajustar
+    }
+  });
+
+  // También escuchar resize
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > window.innerHeight) {
+      alert.remove();
+      onWindowResize();
+    }
+  });
+}
+
+// function setupMobileOrientation() {
+//   // Verificar orientación cada 500ms (para detectar cambios rápidos)
+//   if (orientationCheckInterval) {
+//     clearInterval(orientationCheckInterval);
+//   }
+
+//   orientationCheckInterval = setInterval(() => {
+//     updateHUDForMobile();
+//     onWindowResize();
+//   }, 500);
+
+//   // También escuchar eventos de orientación
+//   window.addEventListener('orientationchange', () => {
+//     setTimeout(() => {
+//       updateHUDForMobile();
+//       onWindowResize();
+//     }, 300); // Pequeño delay para que el navegador actualice dimensiones
+//   });
+// }
 
 /**
  * Crea todos los planetas del sistema solar como esferas 3D con texturas
@@ -808,10 +933,17 @@ function comenzarMision() {
     controls.enabled = true;
     controlsEnabled = true;
   }
-  
+
   if (renderer && renderer.domElement) {
     renderer.domElement.style.pointerEvents = 'auto';
   }
+
+  // Actualizar botones en panel móvil
+  const mobileStartBtn = document.querySelector('.mission-btn-container button:first-child');
+  const mobileEndBtn = document.querySelector('.mission-btn-container button:last-child');
+
+  if (mobileStartBtn) mobileStartBtn.style.display = 'none';
+  if (mobileEndBtn) mobileEndBtn.style.display = 'block';
 
   // if (renderer) {
   //   renderer.domElement.style.pointerEvents = 'auto';
@@ -838,7 +970,7 @@ function finalizarMision() {
 
   // Resetear sistema de daño solar
   inSolarDangerZone = false;
-  
+
   // Ocultar efectos solares
   const solarEffect = document.getElementById('solar-damage-effect');
   if (solarEffect) {
@@ -866,6 +998,13 @@ function finalizarMision() {
     restoreObjectMaterial(selectedObject);
     selectedObject = null;
   }
+
+  // Actualizar botones en panel móvil
+  const mobileStartBtn = document.querySelector('.mission-btn-container button:first-child');
+  const mobileEndBtn = document.querySelector('.mission-btn-container button:last-child');
+
+  if (mobileStartBtn) mobileStartBtn.style.display = 'block';
+  if (mobileEndBtn) mobileEndBtn.style.display = 'none';
 
   hideExploreButton();
   hidePlanetInfoPanel();
@@ -923,7 +1062,7 @@ function finalizarMision() {
  */
 function actualizarEstadoNavegacion(estado) {
   const navigationElement = document.querySelector('.compact-system:nth-child(2) .compact-system-status');
-  
+
   if (navigationElement) {
     if (estado === 'activa') {
       navigationElement.innerHTML = '<span class="status-light status-online"></span>ACTIVA';
@@ -955,21 +1094,21 @@ function initDynamicSystems() {
   // Inicializar estado de navegación
   initializeNavigationSystem();
   actualizarEstadoNavegacion('inactiva'); // Estado inicial
-  
+
   // Iniciar sistema de recuperación automática
   startAutoRecovery();
-  
+
   // Iniciar radar inmediatamente
   setTimeout(() => {
     initRadarSystem();
   }, 500);
-  
+
   // Inicializar monitoreo de batería
   initBatterySystem();
-  
+
   // Inicializar sistemas en tiempo real
   initRealTimeSystems();
-  
+
 
   console.log('Sistemas dinámicos inicializados');
 }
@@ -1311,24 +1450,24 @@ function updateEnergyUI() {
 function updateSystemsByEnergy(energyLevel) {
   const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
   const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
-  
+
   if (!sensorsElement || !shieldsElement) {
     console.warn('⚠️ Elementos de sensores o escudos no encontrados');
     return;
   }
-  
+
   // Sensores - basados en energía
   const sensorsLevel = calculateSystemLevel(energyLevel, 'sensors');
-  
+
   // ESCUDOS - usar la variable shields (afectada por daño solar)
   const shieldsLevel = Math.max(0, Math.min(100, shields));
-  
+
   // Actualizar UI de sensores
   updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
-  
+
   // Actualizar UI de escudos
   updateCompactSystemUI(shieldsElement, shieldsLevel, 'ESCUDOS');
-  
+
   // Alertas si sistemas están críticos
   if (missionStarted) {
     if (sensorsLevel < 30) {
@@ -1389,7 +1528,7 @@ function calculateSystemLevel(energyLevel, systemType) {
 function updateCompactSystemUI(element, level, systemName) {
   if (!element) return;
 
-   // Verificar que no sea el elemento de navegación
+  // Verificar que no sea el elemento de navegación
   const isNavigation = systemName === 'NAVEGACIÓN';
   if (isNavigation) {
     return; // No modificar navegación aquí
@@ -1431,7 +1570,7 @@ function updateCompactSystemUI(element, level, systemName) {
  */
 function initializeNavigationSystem() {
   const navigationElement = document.querySelector('.compact-system:nth-child(2) .compact-system-status');
-  
+
   if (navigationElement) {
     if (missionStarted) {
       navigationElement.innerHTML = '<span class="status-light status-online"></span>ACTIVA';
@@ -1482,10 +1621,10 @@ function updateAllSystems() {
   if (propulsionElement) {
     // Si no hay misión, mostrar energía actual directamente
     const propulsionLevel = missionStarted ? calculateSystemLevel(energy, 'propulsion') : energy;
-    
+
     // Determinar estado
     let statusClass, statusText;
-    
+
     if (propulsionLevel > 70) {
       statusClass = 'status-online';
       statusText = `${Math.round(propulsionLevel)}%`;
@@ -1506,11 +1645,11 @@ function updateAllSystems() {
         statusText = `${Math.round(propulsionLevel)}%`;
       }
     }
-    
+
     propulsionElement.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
     propulsionElement.title = `PROPULSIÓN: ${Math.round(propulsionLevel)}%`;
   }
-  
+
   // 2. NAVEGACIÓN - Mostrar "ACTIVA" o "INACTIVA"
   const navigationElement = document.querySelector('.compact-system:nth-child(2) .compact-system-status');
   if (navigationElement) {
@@ -1521,15 +1660,15 @@ function updateAllSystems() {
     }
     navigationElement.title = `NAVEGACIÓN: ${missionStarted ? 'ACTIVA' : 'INACTIVA'}`;
   }
-  
+
   // 3. ESCUDOS - Mostrar porcentaje actual (usando variable shields)
   const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
   if (shieldsElement) {
     // Si no hay misión, mostrar escudos recuperados (mínimo 80%)
     const displayShields = missionStarted ? shields : Math.max(80, shields);
-    
+
     let statusClass, statusText;
-    
+
     if (displayShields > 70) {
       statusClass = 'status-online';
       statusText = `${Math.round(displayShields)}%`;
@@ -1550,17 +1689,17 @@ function updateAllSystems() {
         statusText = `${Math.round(displayShields)}%`;
       }
     }
-    
+
     shieldsElement.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
     shieldsElement.title = `ESCUDOS: ${Math.round(displayShields)}%`;
   }
-  
+
   // 4. SENSORES - Mostrar porcentaje
   const sensorsElement = document.querySelector('.compact-system:nth-child(4) .compact-system-status');
   if (sensorsElement) {
     // Si no hay misión, mostrar 100%
     const sensorsLevel = missionStarted ? calculateSystemLevel(energy, 'sensors') : 100;
-    
+
     updateCompactSystemUI(sensorsElement, sensorsLevel, 'SENSORES');
   }
 }
@@ -1572,7 +1711,7 @@ function startAutoRecovery() {
   if (autoRecoveryInterval) {
     clearInterval(autoRecoveryInterval);
   }
-  
+
   autoRecoveryInterval = setInterval(() => {
     if (!missionStarted) {
       recoverAllSystems();
@@ -1590,24 +1729,24 @@ function recoverAllSystems() {
     fuel = Math.min(100, fuel);
     updateFuelUI();
   }
-  
+
   // Recuperar energía si está bajo 100%
   if (energy < 100) {
     energy += recoverySpeed * 0.8;
     energy = Math.min(100, energy);
     updateEnergyUI();
   }
-  
+
   // Recuperar escudos a un mínimo de 80% si están bajos
   if (shields < 80) {
     shields += recoverySpeed * 1.2; // Los escudos se recuperan más rápido
     shields = Math.min(100, Math.max(80, shields)); // Mínimo 80%, máximo 100%
     updateShieldsUI();
   }
-  
+
   // Actualizar todos los sistemas
   updateAllSystems();
-  
+
   // Detener recuperación si todo está en niveles aceptables
   if (fuel >= 100 && energy >= 100 && shields >= 80) {
     if (autoRecoveryInterval) {
@@ -1710,7 +1849,7 @@ function updateRadar() {
 
     // Mapear posición 3D a coordenadas 2D del radar
     const maxDistance = 80;
-    
+
     // Usar posición actual del planeta (funciona con o sin misión)
     const planetPos = planet.position;
     const normalizedX = 50 + (planetPos.x / maxDistance) * 40;
@@ -1750,22 +1889,22 @@ setTimeout(() => {
  */
 function generateContextualAlerts() {
   if (!missionStarted || !camera) return;
-  
+
   // Alerta de temperatura cerca del Sol (mantener esta)
   const distanceToSun = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-  
+
   if (distanceToSun < solarWarningDistance && distanceToSun >= solarDangerDistance) {
     // Solo mostrar cada 10 segundos para no saturar
     if (Math.random() < 0.2) {
       showAlert('🌡️ PROXIMIDAD AL SOL - TEMPERATURA AUMENTANDO', 2000);
     }
   }
-  
+
   // Alerta de escudos bajos por daño solar
   if (inSolarDangerZone && shields < 50 && Math.random() < 0.3) {
     showAlert('🔥 DAÑO SOLAR DETECTADO - ESCUDOS BAJANDO', 2000);
   }
-  
+
   // Alerta de cinturón de asteroides (mantener esta)
   const inAsteroidBelt = camera.position.x > 35 && camera.position.x < 45;
   if (inAsteroidBelt && Math.random() < 0.1) {
@@ -1930,14 +2069,14 @@ function showExploreButton(object) {
 
   try {
     // Obtener nombre del objeto
-    const objectName = object.userData?.nombre || 
-                      (object === lunaMesh ? 'Luna' : 
-                      (object === issMesh ? 'ISS' : 'Objeto'));
-    
+    const objectName = object.userData?.nombre ||
+      (object === lunaMesh ? 'Luna' :
+        (object === issMesh ? 'ISS' : 'Objeto'));
+
     // Actualizar el texto del botón con el nombre
     const exploreText = exploreBtn.querySelector('span:first-child');
     const objectNameSpan = exploreBtn.querySelector('.object-name');
-    
+
     if (exploreText) exploreText.textContent = 'EXPLORAR';
     if (objectNameSpan) objectNameSpan.textContent = objectName;
 
@@ -2026,7 +2165,7 @@ function explorarObjeto(object) {
     const objectNameSpan = exploreBtn.querySelector('.object-name');
     if (objectNameSpan) objectNameSpan.textContent = '';
   }
-  
+
   // 1. Guardar la posición original del objeto ANTES de ocultar otros
   const objectWorldPos = new THREE.Vector3();
   object.getWorldPosition(objectWorldPos);
@@ -2371,15 +2510,15 @@ function hidePlanetInfoPanel() {
  * Actualiza la UI de los escudos
  */
 function updateShieldsUI() {
- const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
-  
+  const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
+
   if (shieldsElement) {
     const shieldsLevel = Math.round(shields);
-    
+
     // Determinar clase de estado
     let statusClass = 'status-online';
     let statusText = `${shieldsLevel}%`;
-    
+
     if (missionStarted) {
       // DURANTE MISIÓN: mostrar estados críticos
       if (shieldsLevel < 40) statusClass = 'status-warning';
@@ -2393,11 +2532,11 @@ function updateShieldsUI() {
       statusClass = 'status-online';
       statusText = `${Math.max(80, shieldsLevel)}%`; // Mínimo 80%
     }
-    
+
     // Actualizar elemento
     shieldsElement.innerHTML = `<span class="status-light ${statusClass}"></span>${statusText}`;
     shieldsElement.title = `ESCUDOS: ${shieldsLevel}%${inSolarDangerZone ? ' (DAÑO SOLAR)' : ''}`;
-    
+
     // Efecto visual si escudos están bajos DURANTE misión
     if (shieldsLevel < 30 && missionStarted) {
       shieldsElement.style.animation = 'pulse 1s infinite';
@@ -2412,29 +2551,29 @@ function updateShieldsUI() {
  */
 function checkSolarProximity() {
   if (!missionStarted || !camera || !solarDamageEnabled) return;
-  
+
   // Calcular distancia al Sol (posición 0,0,0)
   const distanceToSun = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-  
+
   // Verificar si estamos en zona de peligro
   const wasInDangerZone = inSolarDangerZone;
   inSolarDangerZone = distanceToSun < solarDangerDistance;
-  
+
   // Si acabamos de entrar en zona de peligro, mostrar alerta
   if (inSolarDangerZone && !wasInDangerZone) {
     showAlert('⚠️ ZONA DE PELIGRO SOLAR - ESCUDOS BAJANDO', 3000);
   }
-  
+
   // Si salimos de la zona de peligro, mostrar alerta de recuperación
   if (!inSolarDangerZone && wasInDangerZone) {
     showAlert('✅ SALIENDO DE ZONA SOLAR - ESCUDOS SE RECUPERAN', 2000);
   }
-  
+
   // Mostrar advertencia si estamos cerca pero no en peligro
   if (distanceToSun < solarWarningDistance && distanceToSun >= solarDangerDistance) {
     showAlert('🌡️ PROXIMIDAD AL SOL - MANTENER DISTANCIA', 2000);
   }
-  
+
   // Aplicar daño a escudos si estamos en zona de peligro
   if (inSolarDangerZone && missionStarted) {
     applySolarDamage(distanceToSun);
@@ -2452,7 +2591,7 @@ function checkSolarProximity() {
       solarEffect.style.opacity = 0;
     }
   }
-  
+
   // Actualizar UI de escudos
   updateShieldsUI();
 }
@@ -2463,25 +2602,25 @@ function checkSolarProximity() {
 function applySolarDamage(distanceToSun) {
   const now = Date.now();
   const delta = (now - lastShieldDamageTime) / 1000; // Segundos
-  
+
   // Daño basado en distancia (más cerca = más daño)
   const distanceFactor = 1 - (distanceToSun / solarDangerDistance);
   const damage = shieldDamageRate * delta * distanceFactor * 10;
-  
+
   // Reducir escudos
   shields = Math.max(0, shields - damage);
   lastShieldDamageTime = now;
-  
+
   // Si los escudos están críticos, mostrar alertas
   if (shields < 30 && shields > 0) {
     showAlert('🛡️ ESCUDOS CRÍTICOS - ALEJARSE DEL SOL INMEDIATAMENTE', 2000);
   }
-  
+
   // Si los escudos llegan a 0
   if (shields <= 0 && missionStarted) {
     shields = 0;
     showAlert('💥 ESCUDOS DESTRUIDOS - SISTEMAS EN PELIGRO', 4000);
-    
+
     // Aplicar daño directo a la nave (energía y combustible)
     applyDirectDamage();
   }
@@ -2494,20 +2633,20 @@ function applyDirectDamage() {
   // Daño a energía cuando no hay escudos
   energy -= 0.5;
   energy = Math.max(0, energy);
-  
+
   // Daño a combustible cuando no hay escudos
   fuel -= 0.3;
   fuel = Math.max(0, fuel);
-  
+
   // Actualizar UIs
   updateEnergyUI();
   updateFuelUI();
-  
+
   // Si la energía o combustible son críticos
   if (energy < 20) {
     showAlert('🔋 ENERGÍA CRÍTICA - PELIGRO DE APAGÓN', 2000);
   }
-  
+
   if (fuel < 20) {
     showAlert('⛽ COMBUSTIBLE CRÍTICO - PROPULSIÓN COMPROMETIDA', 2000);
   }
@@ -2518,7 +2657,7 @@ function applyDirectDamage() {
  */
 function recoverShields() {
   const recoveryRate = 0.05; // % por segundo
-  
+
   // Solo recuperar si no estamos en misión o si estamos lejos del Sol
   if (!missionStarted || !inSolarDangerZone) {
     shields += recoveryRate;
@@ -2532,25 +2671,25 @@ function recoverShields() {
 function showSolarDamageEffects() {
   // Crear o obtener el elemento de efecto
   let solarEffect = document.getElementById('solar-damage-effect');
-  
+
   if (!solarEffect) {
     solarEffect = document.createElement('div');
     solarEffect.id = 'solar-damage-effect';
     solarEffect.className = 'solar-damage-effect';
     document.body.appendChild(solarEffect);
   }
-  
+
   // Calcular intensidad basada en proximidad y estado de escudos
   const distanceToSun = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
   const proximityFactor = 1 - Math.min(1, distanceToSun / solarDangerDistance);
   const shieldFactor = shields / 100;
-  
+
   // Intensidad del efecto (0 a 1)
   const intensity = proximityFactor * (1 - shieldFactor);
-  
+
   // Aplicar efecto
   solarEffect.style.opacity = Math.max(0, Math.min(0.7, intensity));
-  
+
   // Destello aleatorio si los escudos están muy bajos
   if (shields < 10 && Math.random() < 0.1) {
     showSolarFlash();
@@ -2564,7 +2703,7 @@ function showSolarFlash() {
   const flash = document.createElement('div');
   flash.className = 'flash-effect';
   document.body.appendChild(flash);
-  
+
   // Animación del destello
   gsap.to(flash, {
     duration: 0.1,
@@ -2579,6 +2718,35 @@ function showSolarFlash() {
       });
     }
   });
+}
+
+function updateHUDForMobile() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isPortrait = window.innerHeight > window.innerWidth;
+
+ if (isMobile && isPortrait) {
+    // Solo en móviles verticales: mostrar botones en panel compacto
+    const missionBtnContainer = document.querySelector('.mission-btn-container');
+    const mainMissionContainer = document.querySelector('.mission-button-container');
+    
+    if (missionBtnContainer) {
+      missionBtnContainer.style.display = 'flex';
+    }
+    if (mainMissionContainer) {
+      mainMissionContainer.style.display = 'none';
+    }
+  } else {
+    // En desktop o móviles horizontales: mostrar botones principales
+    const missionBtnContainer = document.querySelector('.mission-btn-container');
+    const mainMissionContainer = document.querySelector('.mission-button-container');
+    
+    if (missionBtnContainer) {
+      missionBtnContainer.style.display = 'none';
+    }
+    if (mainMissionContainer) {
+      mainMissionContainer.style.display = 'flex';
+    }
+  }
 }
 
 // =============================================
@@ -2643,3 +2811,15 @@ window.finalizarMision = finalizarMision;
 window.hidePlanetInfoPanel = hidePlanetInfoPanel;
 window.initScene = initScene;
 window.initDynamicSystems = initDynamicSystems;
+
+window.addEventListener('orientationchange', function() {
+  setTimeout(() => {
+    onWindowResize();
+    updateHUDForMobile();
+  }, 100);
+});
+
+window.addEventListener('resize', function() {
+  onWindowResize();
+  updateHUDForMobile();
+});

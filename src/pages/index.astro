@@ -6,7 +6,13 @@ import { hudController } from "../components/SceneClient.js";
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
-        <title>Sistema Solar HUD</title>
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <title>Sistema Solar</title>
         <link rel="stylesheet" href="/src/styles/global.css" />
         <link
             href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
@@ -14,6 +20,10 @@ import { hudController } from "../components/SceneClient.js";
         />
         <script type="module" src="../src/components/SceneClient.js" defer
         ></script>
+        <script
+            type="module"
+            src="../src/components/mobile-orientation.js"
+            defer></script>
         <script src="https://unpkg.com/alpinejs" defer></script>
     </head>
 
@@ -112,6 +122,23 @@ import { hudController } from "../components/SceneClient.js";
                 <div id="system-status" class="text-cyan-200 text-xs mt-2">
                     <span class="status-light status-online"></span>
                     SISTEMA ESTABLE
+                </div>
+
+                <div class="mission-btn-container" style="display: none;">
+                    <button
+                        @click="comenzarMision()"
+                        class="cockpit-btn"
+                        style="font-size: 0.7rem;"
+                    >
+                        INICIAR
+                    </button>
+                    <button
+                        @click="finalizarMision()"
+                        class="cockpit-btn"
+                        style="font-size: 0.7rem; display: none;"
+                    >
+                        FINALIZAR
+                    </button>
                 </div>
             </div>
 

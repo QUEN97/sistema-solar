@@ -18,269 +18,101 @@ body {
   overflow: hidden;
 }
 
-button {
-  cursor: pointer;
-}
-
 /* === ANIMACIONES === */
 @keyframes fadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes blink {
-
-  0%,
-  50%,
-  100% {
-    opacity: 1;
-  }
-
-  25%,
-  75% {
-    opacity: 0.3;
-  }
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.3; }
 }
 
 @keyframes scanlineMove {
-  0% {
-    transform: translateY(-100%);
-  }
-
-  100% {
-    transform: translateY(100%);
-  }
-}
-
-/* === EFECTO HUD === */
-.hud-grid {
-  animation: fadeIn 1s ease forwards;
-}
-
-.blink {
-  animation: blink 1.5s infinite;
-}
-
-/* === SCANLINE === */
-.scanline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: rgba(0, 255, 255, 0.2);
-  animation: scanlineMove 4s linear infinite;
-  pointer-events: none;
-  z-index: 100;
-}
-
-/* === CAJAS DEL HUD === */
-.bg-cyan-500\/20 {
-  background: rgba(0, 255, 255, 0.1) !important;
-}
-
-.border-cyan-400 {
-  border-color: rgba(0, 255, 255, 0.7) !important;
-}
-
-.text-cyan-300 {
-  color: rgba(0, 255, 255, 0.85) !important;
-}
-
-/* === BOTONES === */
-button {
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  background: rgba(0, 255, 255, 0.5);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
-  transform: scale(1.05);
-}
-
-/* === CANVAS 3D === */
-#scene {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at center, #020d1f 0%, #000000 100%);
-  filter: brightness(1.1) contrast(1.2);
-  position: absolute;
-  z-index: 1;
-  pointer-events: auto;
-}
-
-/* === Reflejo del visor del casco con animación === */
-.helmet-reflection {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 5;
-
-  background: radial-gradient(ellipse at var(--reflect-x, 50%) var(--reflect-y, 50%),
-      rgba(255, 255, 255, var(--reflect-opacity, 0.04)) 0%,
-      rgba(0, 0, 0, 0) 70%);
-
-  overflow: hidden;
-}
-
-.helmet-reflection::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-
-  background: url('/textures/scratch.png') repeat;
-  background-size: cover;
-  opacity: 0.20;
-  animation: visorDistortion 10s linear infinite;
-}
-
-.helmet-reflection::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.05) 0%,
-      rgba(255, 255, 255, 0) 40%);
-
-  mix-blend-mode: screen;
-  animation: visorBlink 6s ease-in-out infinite;
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
 }
 
 @keyframes visorDistortion {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-
-  50% {
-    transform: translate(10px, 5px) rotate(1deg);
-  }
-
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(10px, 5px) rotate(1deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
 }
 
 @keyframes visorBlink {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+}
 
-  0%,
-  100% {
-    opacity: 0.05;
+@keyframes planetPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes float {
+  0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+}
+
+@keyframes blipPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.4; }
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes alertPulse {
+  0%, 100% { 
+    border-color: rgba(255, 50, 50, 0.6);
+    box-shadow: 0 10px 30px rgba(255, 50, 50, 0.3);
   }
-
-  50% {
-    opacity: 0.15;
+  50% { 
+    border-color: rgba(255, 100, 100, 1);
+    box-shadow: 0 15px 40px rgba(255, 100, 100, 0.5);
   }
 }
 
-/* === Marco del visor del casco === */
-.hud-frame {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 4px solid rgba(0, 255, 255, 0.3);
-  border-radius: 50% / 30%;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-  pointer-events: none;
-  z-index: 4;
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* === Caja de datos === */
-.hud-box {
-  background: rgba(0, 255, 255, 0.08);
-  border: 1px solid rgba(0, 255, 255, 0.4);
-  padding: 1rem;
-  border-radius: 1rem;
-  backdrop-filter: blur(3px);
-  z-index: 10;
+@keyframes chargingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
-/* === Texto HUD === */
-.hud-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: cyan;
+@keyframes shieldPulse {
+  0%, 100% { opacity: 1; color: #ff4444; }
+  50% { opacity: 0.5; color: #ff0000; }
 }
 
-.hud-label {
-  font-size: 0.85rem;
-  color: rgba(0, 255, 255, 0.7);
+@keyframes exploreBtnFadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
-.hud-value {
-  color: cyan;
-  font-weight: bold;
+@keyframes objectNameFadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.hud-container {
-  transition: transform 0.1s ease-out;
-  transform-style: preserve-3d;
-  position: absolute;
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* === Botones estilo militar === */
-.hud-btn {
-  background: rgba(0, 255, 255, 0.1);
-  border: 1px solid rgba(0, 255, 255, 0.5);
-  color: cyan;
-  padding: 0.6rem 1.2rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border-radius: 0.5rem;
-  transition: all 0.3s ease;
-  pointer-events: auto !important;
-  /* Esto es crucial */
-  position: relative;
-  /* Asegura que respete el z-index */
-  z-index: 210;
-}
-
-.hud-btn:hover {
-  background: rgba(0, 255, 255, 0.3);
-  box-shadow: 0 0 10px cyan;
-  transform: scale(1.05);
-}
-
-.hud-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 0 5px cyan inset;
+@keyframes commPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* === BOTÓN EXPLORAR MEJORADO === */
 #explore-btn {
   position: fixed !important;
-  /* Cambiado de absolute a fixed */
   z-index: 10000 !important;
-  /* Z-index muy alto */
   pointer-events: auto !important;
-
-  /* Estilos visuales */
   background: linear-gradient(135deg, #002244, #004488) !important;
   border: 2px solid #00f0ff !important;
   color: #00f0ff !important;
@@ -291,50 +123,23 @@ button:hover {
   letter-spacing: 1px !important;
   text-transform: uppercase !important;
   font-size: 0.9rem !important;
-
-  /* Efectos */
-  box-shadow:
-    0 0 25px rgba(0, 240, 255, 0.8),
-    0 0 50px rgba(0, 240, 255, 0.4) !important;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.8), 0 0 50px rgba(0, 240, 255, 0.4) !important;
   backdrop-filter: blur(10px) !important;
-
-  /* Transformación para centrar */
   transform: translate(-50%, -50%) !important;
-
-  /* Transición suave */
   transition: all 0.3s ease !important;
-
-  /* Animación de entrada */
   animation: exploreBtnFadeIn 0.5s ease-out forwards !important;
-
-  /* Asegurar que sea visible */
   opacity: 1 !important;
   display: none;
-  /* Inicialmente oculto */
 }
 
 #explore-btn:hover {
   background: linear-gradient(135deg, #003366, #0055aa) !important;
-  box-shadow:
-    0 0 35px rgba(0, 240, 255, 1),
-    0 0 70px rgba(0, 240, 255, 0.6) !important;
+  box-shadow: 0 0 35px rgba(0, 240, 255, 1), 0 0 70px rgba(0, 240, 255, 0.6) !important;
   transform: translate(-50%, -50%) scale(1.1) !important;
 }
 
 #explore-btn:active {
   transform: translate(-50%, -50%) scale(0.95) !important;
-}
-
-@keyframes exploreBtnFadeIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.7);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
 }
 
 /* Estilos para el nombre del objeto en el botón EXPLORAR */
@@ -349,112 +154,62 @@ button:hover {
   animation: objectNameFadeIn 0.3s ease-out;
 }
 
-@keyframes objectNameFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* === EFECTOS DE SELECCIÓN DE PLANETA === */
-.planet-selected {
-  animation: planetPulse 2s infinite ease-in-out;
-  filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.7));
-}
-
-@keyframes planetPulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-/* === ANIMACIONES DE TRANSICIÓN MEJORADAS === */
-.gsap-transition {
-  transition: all 1.5s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-/* === PANELES DE INFORMACIÓN PARA LUNA/ISS === */
-.iss-panel {
-  border-color: rgba(100, 200, 255, 0.7) !important;
-  background: rgba(0, 50, 100, 0.2) !important;
-}
-
-.moon-panel {
-  border-color: rgba(200, 200, 200, 0.7) !important;
-  background: rgba(100, 100, 150, 0.2) !important;
-}
-
-.special-panel-title {
-  position: relative;
-  padding-bottom: 10px;
-  margin-bottom: 15px;
-}
-
-.special-panel-title::after {
-  content: "";
+/* === REFLEJO DEL VISOR DEL CASCO === */
+.helmet-reflection {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    ellipse at var(--reflect-x, 50%) var(--reflect-y, 50%),
+    rgba(255, 255, 255, var(--reflect-opacity, 0.04)) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  overflow: hidden;
 }
 
-#current-date,
-#current-time {
-  font-family: 'Orbitron', monospace;
-  letter-spacing: 1px;
+.helmet-reflection::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: url('/textures/scratch.png') repeat;
+  background-size: cover;
+  opacity: 0.20;
+  animation: visorDistortion 10s linear infinite;
 }
 
-#comenzar-btn,
-#finalizar-btn {
-  min-width: 180px;
-  font-size: 1.1rem;
-  padding: 12px 24px;
+.helmet-reflection::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0) 40%);
+  mix-blend-mode: screen;
+  animation: visorBlink 6s ease-in-out infinite;
 }
 
-@keyframes pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 10px cyan;
-  }
-
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px cyan;
-  }
-}
-
-/* Asegúrate que los paneles de información tengan alto z-index */
-#planet-info-panel,
-#planet-funfacts-panel {
-  background: rgba(0, 20, 40, 0.95) !important;
-  border: 2px solid rgba(0, 255, 255, 0.7) !important;
-  backdrop-filter: blur(10px) !important;
-  padding: 1.5rem !important;
-  border-radius: 1rem !important;
-  max-width: 350px !important;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3) !important;
-  pointer-events: auto !important;
-  z-index: 1000 !important;
-}
-
-#planet-info-panel h2,
-#planet-funfacts-panel h3 {
-  color: #00f0ff !important;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5) !important;
+/* === MARCO DEL VISOR DEL CASCO === */
+.hud-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 4px solid rgba(0, 255, 255, 0.3);
+  border-radius: 50% / 30%;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 4;
 }
 
 /* === VISTA INTERIOR DE NAVE ESPACIAL === */
@@ -485,27 +240,98 @@ button:hover {
   z-index: 1;
 }
 
-/* Panel de control compacto en la parte inferior */
-.control-panel {
+/* Panel de control compacto en esquina inferior izquierda */
+.compact-control-panel {
   position: absolute;
   bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 600px;
-  height: auto;
+  left: 20px;
+  width: 280px;
   background: linear-gradient(to top, rgba(0, 20, 40, 0.9), rgba(0, 10, 20, 0.85));
   border: 2px solid rgba(0, 150, 255, 0.6);
   border-radius: 12px;
   backdrop-filter: blur(15px);
   z-index: 10;
-  display: flex;
-  flex-direction: column;
   padding: 1rem;
   box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
 }
 
-/* Consola de navegación lateral derecha */
+.compact-systems {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.compact-system {
+  background: rgba(0, 20, 40, 0.6);
+  border: 1px solid rgba(0, 150, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.compact-system-label {
+  font-size: 0.65rem;
+  color: rgba(0, 200, 255, 0.7);
+  margin-bottom: 0.2rem;
+}
+
+.compact-system-status {
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.compact-energy-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.compact-power-indicator {
+  width: 60px;
+  height: 6px;
+  background: rgba(0, 50, 100, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.compact-power-level {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88, #00ccff);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.compact-systems-status {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(0, 150, 255, 0.3);
+  width: 100%;
+}
+
+.compact-system-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0;
+}
+
+.compact-system-row .label {
+  color: rgba(0, 200, 255, 0.7);
+  font-weight: bold;
+}
+
+.compact-system-row .value {
+  color: #00ffaa;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
+}
+
+/* Consola de Navegación lateral derecha */
 .navigation-console {
   position: absolute;
   top: 20px;
@@ -541,13 +367,24 @@ button:hover {
   width: 100%;
   height: 100%;
   background: conic-gradient(from 0deg,
-      transparent 0deg,
-      rgba(0, 200, 255, 0.1) 10deg,
-      transparent 20deg);
+    transparent 0deg,
+    rgba(0, 200, 255, 0.1) 10deg,
+    transparent 20deg);
   animation: radarSweep 3s linear infinite;
 }
 
-/* Reloj de navegación estelar compacto */
+.radar-blip {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #00ff96;
+  border-radius: 50%;
+  animation: blipPulse 2s infinite;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Reloj de navegación estelar */
 .stellar-clock {
   position: absolute;
   top: 20px;
@@ -579,35 +416,16 @@ button:hover {
   text-shadow: 0 0 8px rgba(0, 255, 170, 0.5);
 }
 
-/* Sistemas panel compacto */
-.systems-panel {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+/* Botones de misión en el centro inferior */
+.mission-button-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
-.system-indicator {
-  background: rgba(0, 20, 40, 0.6);
-  border: 1px solid rgba(0, 150, 255, 0.3);
-  border-radius: 6px;
-  padding: 0.4rem;
-  text-align: center;
-}
-
-.system-label {
-  font-size: 0.65rem;
-  color: rgba(0, 200, 255, 0.7);
-  margin-bottom: 0.2rem;
-}
-
-.system-status {
-  font-size: 0.7rem;
-  color: #00ff88;
-  font-weight: bold;
-}
-
-/* Botones compactos */
+/* Botones estilo cockpit */
 .cockpit-btn {
   background: linear-gradient(135deg, #002244, #004488);
   border: 1px solid rgba(0, 150, 255, 0.6);
@@ -632,132 +450,8 @@ button:hover {
   transform: scale(1.05);
 }
 
-/* Consola inferior compacta */
-.lower-console {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.8rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid rgba(0, 150, 255, 0.3);
-}
-
-.engine-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.power-indicator {
-  width: 80px;
-  height: 6px;
-  background: rgba(0, 50, 100, 0.5);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.power-level {
-  height: 100%;
-  background: linear-gradient(90deg, #00ff88, #00ccff);
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
-
-/* Botones en fila para el panel de control */
-.control-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 0.8rem;
-}
-
-/* Alertas compactas */
-.alert-panel {
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(30, 0, 0, 0.9);
-  border: 1px solid rgba(255, 50, 50, 0.6);
-  border-radius: 8px;
-  padding: 0.6rem 1rem;
-  backdrop-filter: blur(10px);
-  z-index: 15;
-  animation: alertPulse 3s infinite;
-  max-width: 300px;
-  text-align: center;
-}
-
-.alert-message {
-  color: #ff6666;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-/* Efectos de partículas en cabina */
-.cockpit-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.particle {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: rgba(0, 200, 255, 0.6);
-  border-radius: 50%;
-  animation: float 20s infinite linear;
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(100vh) translateX(0);
-    opacity: 0;
-  }
-
-  10% {
-    opacity: 1;
-  }
-
-  90% {
-    opacity: 1;
-  }
-
-  100% {
-    transform: translateY(-100vh) translateX(100px);
-    opacity: 0;
-  }
-}
-
-/* Mejorar visibilidad del radar */
-.radar-blip {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: #00ff96;
-  border-radius: 50%;
-  animation: blipPulse 2s infinite;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 8px currentColor;
-}
-
-@keyframes blipPulse {
-
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.8;
-  }
-
-  50% {
-    transform: translate(-50%, -50%) scale(1.5);
-    opacity: 0.4;
-  }
+.cockpit-btn:active {
+  transform: scale(0.95);
 }
 
 /* Indicadores luminosos */
@@ -772,151 +466,20 @@ button:hover {
 
 .status-online {
   background: #00ff88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.7);
 }
 
 .status-warning {
   background: #ffaa00;
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.7);
 }
 
 .status-critical {
   background: #ff4444;
+  box-shadow: 0 0 10px rgba(255, 68, 68, 0.7);
 }
 
-@keyframes statusPulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes alertPulse {
-
-  0%,
-  100% {
-    border-color: rgba(255, 50, 50, 0.6);
-  }
-
-  50% {
-    border-color: rgba(255, 100, 100, 1);
-  }
-}
-
-@keyframes radarSweep {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* ============================================= */
-/* SISTEMAS DINÁMICOS - ESTILOS ADICIONALES */
-/* ============================================= */
-
-/* Animación de pulso para carga de batería */
-@keyframes chargingPulse {
-
-  0%,
-  100% {
-    opacity: 1;
-    background: linear-gradient(90deg, #00ff88, #00ccff);
-  }
-
-  50% {
-    opacity: 0.6;
-    background: linear-gradient(90deg, #00ccff, #00ff88);
-  }
-}
-
-/* Estados para indicadores de sistemas */
-.status-critical {
-  background: #ff4444 !important;
-  box-shadow: 0 0 10px rgba(255, 68, 68, 0.7) !important;
-}
-
-.status-warning {
-  background: #ffaa00 !important;
-  box-shadow: 0 0 10px rgba(255, 170, 0, 0.7) !important;
-}
-
-.status-online {
-  background: #00ff88 !important;
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.7) !important;
-}
-
-/* Estilos para los sistemas de estado */
-.systems-status {
-  margin-top: 0.8rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid rgba(0, 150, 255, 0.3);
-  width: 100%;
-}
-
-.system-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.7rem;
-  margin-bottom: 0.4rem;
-  padding: 0.2rem 0;
-}
-
-.system-row .label {
-  color: rgba(0, 200, 255, 0.7);
-  font-weight: bold;
-}
-
-.system-row .value {
-  color: #00ffaa;
-  font-family: 'Orbitron', monospace;
-  font-size: 0.75rem;
-  text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
-}
-
-/* Mejoras para el panel de control */
-.control-panel {
-  /* Ajustar altura para acomodar nuevos elementos */
-  min-height: 140px;
-}
-
-.lower-console {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-
-.engine-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: flex-start;
-}
-
-/* Estados del sistema basados en batería */
-.system-status-critical {
-  color: #ff4444 !important;
-  text-shadow: 0 0 8px rgba(255, 68, 68, 0.5) !important;
-}
-
-.system-status-warning {
-  color: #ffaa00 !important;
-  text-shadow: 0 0 8px rgba(255, 170, 0, 0.5) !important;
-}
-
-.system-status-online {
-  color: #00ff88 !important;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.5) !important;
-}
-
-/* Mejoras para alertas contextuales */
+/* Panel de Alertas */
 .alert-panel {
   position: absolute;
   top: 80px;
@@ -942,200 +505,24 @@ button:hover {
   letter-spacing: 1px;
 }
 
-@keyframes alertPulse {
-
-  0%,
-  100% {
-    border-color: rgba(255, 50, 50, 0.6);
-    box-shadow: 0 0 20px rgba(255, 50, 50, 0.4);
-  }
-
-  50% {
-    border-color: rgba(255, 100, 100, 1);
-    box-shadow: 0 0 30px rgba(255, 100, 100, 0.7);
-  }
-}
-
-/* Responsive para móviles */
-@media (max-width: 768px) {
-  .systems-status {
-    margin-top: 0.6rem;
-    padding-top: 0.6rem;
-  }
-
-  .system-row {
-    font-size: 0.65rem;
-    margin-bottom: 0.3rem;
-  }
-
-  .alert-panel {
-    top: 60px;
-    max-width: 280px;
-    padding: 0.6rem 1rem;
-  }
-
-  .alert-message {
-    font-size: 0.75rem;
-  }
-
-  .navigation-console {
-    width: 200px;
-    height: 250px;
-    right: 10px;
-    top: 10px;
-  }
-
-  .control-panel {
-    bottom: 10px;
-    width: 95%;
-  }
-
-  .stellar-clock {
-    top: 10px;
-    left: 10px;
-    min-width: 150px;
-  }
-}
-
-.compact-control-panel {
+/* Efectos de partículas en cabina */
+.cockpit-particles {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  width: 280px;
-  background: linear-gradient(to top, rgba(0, 20, 40, 0.9), rgba(0, 10, 20, 0.85));
-  border: 2px solid rgba(0, 150, 255, 0.6);
-  border-radius: 12px;
-  backdrop-filter: blur(15px);
-  z-index: 10;
-  padding: 1rem;
-  box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
-}
-
-.mission-button-container {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-}
-
-.compact-systems {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 0.8rem;
-}
-
-.compact-system {
-  background: rgba(0, 20, 40, 0.6);
-  border: 1px solid rgba(0, 150, 255, 0.3);
-  border-radius: 6px;
-  padding: 0.4rem;
-  text-align: center;
-}
-
-.compact-system-label {
-  font-size: 0.65rem;
-  color: rgba(0, 200, 255, 0.7);
-  margin-bottom: 0.2rem;
-}
-
-.compact-system-status {
-  font-size: 0.7rem;
-  color: #00ff88;
-  font-weight: bold;
-}
-
-.compact-energy-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.8rem;
-}
-
-.compact-power-indicator {
-  width: 60px;
-  height: 6px;
-  background: rgba(0, 50, 100, 0.5);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.compact-power-level {
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, #00ff88, #00ccff);
-  border-radius: 3px;
-  transition: width 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.compact-system-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.7rem;
-  margin-bottom: 0.4rem;
-  padding: 0.2rem 0;
-}
-
-.compact-system-row .label {
-  color: rgba(0, 200, 255, 0.7);
-  font-weight: bold;
-}
-
-.compact-system-row .value {
-  color: #00ffaa;
-  font-family: 'Orbitron', monospace;
-  font-size: 0.75rem;
-  text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
-}
-
-@media (max-width: 768px) {
-  .compact-control-panel {
-    width: 240px;
-    left: 10px;
-    bottom: 10px;
-  }
-
-  .mission-button-container {
-    bottom: 10px;
-  }
-}
-
-/* Efectos para comunicaciones */
-#comms-display {
-  transition: all 0.3s ease;
-}
-
-#comms-display.transmitting {
-  color: #00ff96;
-  text-shadow: 0 0 10px rgba(0, 255, 150, 0.7);
-  animation: commPulse 1s infinite;
-}
-
-@keyframes commPulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.6;
-  }
-}
-
-/* Estados de comunicación */
-.comm-active {
-  color: #00ff96 !important;
-}
-
-.comm-warning {
-  color: #ffaa00 !important;
-}
-
-.comm-critical {
-  color: #ff4444 !important;
-  animation: blink 1s infinite;
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(0, 200, 255, 0.6);
+  border-radius: 50%;
+  animation: float 20s infinite linear;
 }
 
 /* Efecto de daño solar */
@@ -1161,17 +548,6 @@ button:hover {
   animation: shieldPulse 0.5s infinite !important;
 }
 
-@keyframes shieldPulse {
-  0%, 100% { 
-    opacity: 1;
-    color: #ff4444;
-  }
-  50% { 
-    opacity: 0.5;
-    color: #ff0000;
-  }
-}
-
 /* Efecto de destello solar */
 .flash-effect {
   position: fixed;
@@ -1183,4 +559,375 @@ button:hover {
   pointer-events: none;
   z-index: 999;
   opacity: 0;
+}
+
+/* Estados del sistema */
+.system-status-critical {
+  color: #ff4444 !important;
+  text-shadow: 0 0 8px rgba(255, 68, 68, 0.5) !important;
+}
+
+.system-status-warning {
+  color: #ffaa00 !important;
+  text-shadow: 0 0 8px rgba(255, 170, 0, 0.5) !important;
+}
+
+.system-status-online {
+  color: #00ff88 !important;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.5) !important;
+}
+
+/* Estados de comunicación */
+.comm-active {
+  color: #00ff96 !important;
+}
+
+.comm-warning {
+  color: #ffaa00 !important;
+}
+
+.comm-critical {
+  color: #ff4444 !important;
+  animation: blink 1s infinite;
+}
+
+#comms-display.transmitting {
+  color: #00ff96;
+  text-shadow: 0 0 10px rgba(0, 255, 150, 0.7);
+  animation: commPulse 1s infinite;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .compact-control-panel {
+    width: 240px;
+    left: 10px;
+    bottom: 10px;
+  }
+
+  .mission-button-container {
+    bottom: 10px;
+  }
+
+  .navigation-console {
+    width: 200px;
+    height: 250px;
+    right: 10px;
+    top: 10px;
+  }
+
+  .stellar-clock {
+    top: 10px;
+    left: 10px;
+    min-width: 150px;
+  }
+
+  .alert-panel {
+    top: 60px;
+    max-width: 280px;
+    padding: 0.6rem 1rem;
+  }
+
+  .alert-message {
+    font-size: 0.75rem;
+  }
+
+  .compact-systems-status {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+  }
+
+  .compact-system-row {
+    font-size: 0.65rem;
+    margin-bottom: 0.3rem;
+  }
+}
+
+/* === RESPONSIVE PARA MÓVILES HORIZONTALES === */
+@media (max-width: 1024px) and (orientation: landscape) {
+  /* Reducir tamaño general del HUD */
+  .spaceship-cockpit {
+    transform: scale(0.8);
+    transform-origin: top left;
+  }
+  
+  /* Panel de control compacto - hacerlo más pequeño */
+  .compact-control-panel {
+    width: 200px !important;
+    bottom: 10px !important;
+    left: 10px !important;
+    padding: 0.6rem !important;
+    border-width: 1px !important;
+  }
+  
+  .compact-systems {
+    gap: 0.3rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+  
+  .compact-system {
+    padding: 0.3rem !important;
+  }
+  
+  .compact-system-label {
+    font-size: 0.55rem !important;
+  }
+  
+  .compact-system-status {
+    font-size: 0.6rem !important;
+  }
+  
+  /* Radar más pequeño */
+  .navigation-console {
+    width: 160px !important;
+    height: 140px !important;
+    top: 10px !important;
+    right: 10px !important;
+    padding: 0.6rem !important;
+    border-width: 1px !important;
+  }
+  
+  .navigation-console h3 {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+  
+  /* Reloj más compacto */
+ .stellar-clock {
+    position: absolute !important;
+    top: auto !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    min-width: 140px !important;
+    padding: 0.6rem !important;
+    border-width: 1px !important;
+    transform: none !important;
+  }
+  
+  .stellar-date {
+    font-size: 0.65rem !important;
+  }
+  
+  .stellar-time {
+    font-size: 0.9rem !important;
+  }
+  
+  /* Botones más pequeños */
+  .mission-button-container {
+    bottom: 10px !important;
+    transform: translateX(-50%) scale(0.85) !important;
+  }
+  
+  .cockpit-btn {
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  /* Estados del sistema más compactos */
+  .compact-systems-status {
+    margin-top: 0.6rem !important;
+    padding-top: 0.6rem !important;
+  }
+  
+  .compact-system-row {
+    font-size: 0.6rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+  
+  /* Botón EXPLORAR más pequeño */
+  #explore-btn {
+    font-size: 0.7rem !important;
+    padding: 8px 16px !important;
+    min-width: 120px !important;
+  }
+  
+  #explore-btn .object-name {
+    font-size: 0.45rem !important;
+  }
+  
+  /* Paneles de información */
+  #planet-info-panel,
+  #planet-funfacts-panel {
+    width: 60vw !important;
+    max-width: 240px !important;
+    padding: 0.8rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  #planet-info-panel h2,
+  #planet-funfacts-panel h3 {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Alertas */
+  .alert-panel {
+    max-width: 250px !important;
+    padding: 0.6rem 0.8rem !important;
+    top: 70px !important;
+  }
+  
+  .alert-message {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* === MÓVILES PEQUEÑOS HORIZONTALES === */
+@media (max-width: 740px) and (orientation: landscape) {
+  .spaceship-cockpit {
+    transform: scale(0.7) !important;
+  }
+  
+  .compact-control-panel {
+    width: 180px !important;
+    bottom: 5px !important;
+    left: 5px !important;
+  }
+  
+  .navigation-console {
+    width: 120px !important;
+    padding: 0.4rem !important;
+    bottom: 5px !important;
+    right: 5px !important;
+  }
+  
+  .stellar-clock {
+    min-width: 100px !important;
+    top: 5px !important;
+    left: 5px !important;
+  }
+  
+  .mission-button-container {
+    transform: translateX(-50%) scale(0.75) !important;
+    bottom: 5px !important;
+  }
+}
+
+/* === TABLETS HORIZONTALES === */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .spaceship-cockpit {
+    transform: scale(0.9) !important;
+  }
+  
+  .compact-control-panel {
+    width: 240px !important;
+  }
+  
+  .navigation-console {
+    width: 200px !important;
+    height: 160px !important; /* Espacio para reloj */
+  }
+  .stellar-clock {
+    min-width: 160px !important;
+    bottom: 15px !important;
+    right: 15px !important;
+  }
+}
+
+/* === ORIENTACIÓN VERTICAL (ocultar elementos para más espacio) === */
+@media (max-width: 768px) and (orientation: portrait) {
+  .navigation-console {
+    display: none !important;
+  }
+  
+  .compact-control-panel {
+    width: 90vw !important;
+    max-width: 320px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: 10px !important;
+  }
+  
+  .stellar-clock {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: 10px !important;
+    min-width: 150px !important;
+  }
+  
+  .mission-button-container {
+    display: none !important;
+  }
+  
+  /* Mostrar botón de misión en panel cuando esté en vertical */
+  .compact-control-panel::after {
+    content: '';
+    display: block;
+    height: 1px;
+    background: rgba(0, 150, 255, 0.3);
+    margin: 0.8rem 0;
+  }
+  
+  /* Agregar botón de misión al panel en vertical */
+  .compact-control-panel .mission-btn-container {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    margin-top: 0.8rem !important;
+  }
+}
+
+/* === AJUSTES ESPECÍFICOS PARA iOS === */
+@supports (-webkit-touch-callout: none) {
+  /* Safari/iOS specific styles */
+  .spaceship-cockpit {
+    -webkit-backdrop-filter: blur(15px);
+  }
+  
+  @media (max-width: 1024px) and (orientation: landscape) {
+    .compact-control-panel,
+    .navigation-console,
+    .stellar-clock {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: blur(10px);
+      background: rgba(0, 15, 30, 0.95);
+    }
+  }
+}
+
+/* === PREVENIR ZOOM NO DESEADO === */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+input, textarea, button {
+  font-size: 16px !important; /* Previene zoom automático en iOS */
+}
+
+/* === AJUSTES POR ALTURA EN HORIZONTAL === */
+@media (max-width: 768px) and (orientation: landscape) and (max-height: 450px) {
+  /* Pantallas muy cortas en horizontal */
+  .spaceship-cockpit {
+    transform: scale(0.65) !important;
+  }
+  
+  .compact-control-panel {
+    width: 160px !important;
+    padding: 0.4rem !important;
+  }
+  
+  .navigation-console {
+    height: 140px !important;
+  }
+  
+  .stellar-clock {
+    display: none !important; /* Ocultar reloj en pantallas muy cortas */
+  }
+}
+
+/* === AJUSTES PARA PANTALLAS ALTAS EN HORIZONTAL === */
+@media (max-width: 768px) and (orientation: landscape) and (min-height: 600px) {
+  .spaceship-cockpit {
+    transform: scale(0.85) !important;
+  }
+  
+  .compact-control-panel {
+    width: 220px !important;
+  }
+  
+  .navigation-console {
+    height: 200px !important;
+  }
 }
