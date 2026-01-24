@@ -228,7 +228,7 @@ export function initScene() {
 
   // Crear escena, cámara y renderizador
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 5000);
   // Posición inicial basada en dispositivo
   if (isMobile && window.innerWidth < window.innerHeight) {
     // Vertical - vista más cercana
@@ -254,8 +254,8 @@ export function initScene() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.enablePan = false;
-  controls.minDistance = 2;
-  controls.maxDistance = 50;
+  controls.minDistance = 0.2;
+  controls.maxDistance = 120;
   controls.rotateSpeed = 0.5;
   controls.zoomSpeed = 0.8;
   controls.enabled = false;
