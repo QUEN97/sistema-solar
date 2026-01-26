@@ -291,6 +291,7 @@ export function initScene() {
   });
   crearCinturónAsteroides();
   crearPolvoAsteroides();
+  crearCometas();
   crearOrbitLines();
 
   // Configurar actualizaciones periódicas
@@ -417,7 +418,7 @@ function onWindowResize() {
       camera.position.y = 8;
     }
   }
-   
+
   if (controls) {
     controls.update();
   }
@@ -584,6 +585,39 @@ function crearPlanetas() {
   });
 }
 
+function crearCometas() {
+  const loader = new THREE.TextureLoader();
+
+  cometas.forEach((c, index) => {
+    const geometry = new THREE.SphereGeometry(c.tamaño, 16, 16);
+    const texture = loader.load(c.textura);
+
+    const material = new THREE.MeshStandardMaterial({
+      map: texture,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.4
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // Posición inicial
+    mesh.position.set(c.afelio, 0, 0);
+
+    mesh.userData = {
+      nombre: c.nombre,
+      tipo: 'cometa',
+      perihelio: c.perihelio,
+      afelio: c.afelio,
+      velocidad: c.velocidad,
+      inclinacion: c.inclinacion
+    };
+
+    scene.add(mesh);
+    cometasMeshes.push(mesh);
+    cometasOrbitAngles.push(Math.random() * Math.PI * 2);
+  });
+}
+
 /**
  * Crea la Luna como objeto 3D que orbita alrededor de la Tierra
  */
@@ -676,6 +710,33 @@ function crearCinturónAsteroides() {
     cinturónMeshes.push(mesh);
   }
 }
+
+// =============================
+// COMETAS
+// =============================
+const cometas = [
+  {
+    nombre: 'Halley',
+    tamaño: 0.4,
+    textura: '/textures/comet.jpg',
+    perihelio: 8,
+    afelio: 110,
+    velocidad: 0.0012,
+    inclinacion: 0.6
+  },
+  {
+    nombre: 'Encke',
+    tamaño: 0.3,
+    textura: '/textures/comet.jpg',
+    perihelio: 6,
+    afelio: 45,
+    velocidad: 0.0022,
+    inclinacion: 0.3
+  }
+];
+
+let cometasMeshes = [];
+let cometasOrbitAngles = [];
 
 /**
  * Crea partículas de polvo estelar en el cinturón de asteroides
@@ -852,6 +913,35 @@ function animate() {
     mesh.rotation.x += mesh.userData.rotationSpeed.x;
     mesh.rotation.y += mesh.userData.rotationSpeed.y;
   });
+
+  // COMETAS - órbitas elípticas seguras
+  if (!missionStarted) {
+    cometasMeshes.forEach((mesh, i) => {
+      if (!mesh.userData) return;
+
+      const {
+        perihelio,
+        afelio,
+        velocidad,
+        inclinacion
+      } = mesh.userData;
+
+      if (velocidad === undefined) return;
+
+      cometasOrbitAngles[i] += velocidad;
+
+      const x = Math.cos(cometasOrbitAngles[i]) * afelio;
+      const z = Math.sin(cometasOrbitAngles[i]) * perihelio;
+
+      mesh.position.set(
+        x,
+        Math.sin(cometasOrbitAngles[i]) * inclinacion * 10,
+        z
+      );
+
+      mesh.rotation.y += 0.01;
+    });
+  }
 
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
@@ -1878,6 +1968,23 @@ function updateRadar() {
     blip.style.background = colors[planetas[index].nombre] || '#00ff96';
     radar.appendChild(blip);
   });
+  // COMETAS EN RADAR
+  cometasMeshes.forEach(mesh => {
+    const blip = document.createElement('div');
+    blip.className = 'radar-blip';
+    blip.style.background = '#ff00ff'; // magenta distintivo
+
+    const maxDistance = 120;
+    const x = 50 + (mesh.position.x / maxDistance) * 40;
+    const y = 50 + (mesh.position.z / maxDistance) * 40;
+
+    blip.style.left = `${Math.max(10, Math.min(90, x))}%`;
+    blip.style.top = `${Math.max(10, Math.min(90, y))}%`;
+    blip.title = `Cometa ${mesh.userData.nombre}`;
+
+    radar.appendChild(blip);
+  });
+
 }
 // Iniciar radar inmediatamente al cargar
 setTimeout(() => {
@@ -2724,11 +2831,11 @@ function updateHUDForMobile() {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const isPortrait = window.innerHeight > window.innerWidth;
 
- if (isMobile && isPortrait) {
+  if (isMobile && isPortrait) {
     // Solo en móviles verticales: mostrar botones en panel compacto
     const missionBtnContainer = document.querySelector('.mission-btn-container');
     const mainMissionContainer = document.querySelector('.mission-button-container');
-    
+
     if (missionBtnContainer) {
       missionBtnContainer.style.display = 'flex';
     }
@@ -2739,7 +2846,7 @@ function updateHUDForMobile() {
     // En desktop o móviles horizontales: mostrar botones principales
     const missionBtnContainer = document.querySelector('.mission-btn-container');
     const mainMissionContainer = document.querySelector('.mission-button-container');
-    
+
     if (missionBtnContainer) {
       missionBtnContainer.style.display = 'none';
     }
@@ -2812,14 +2919,14 @@ window.hidePlanetInfoPanel = hidePlanetInfoPanel;
 window.initScene = initScene;
 window.initDynamicSystems = initDynamicSystems;
 
-window.addEventListener('orientationchange', function() {
+window.addEventListener('orientationchange', function () {
   setTimeout(() => {
     onWindowResize();
     updateHUDForMobile();
   }, 100);
 });
 
-window.addEventListener('resize', function() {
+window.addEventListener('resize', function () {
   onWindowResize();
   updateHUDForMobile();
 });
