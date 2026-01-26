@@ -601,6 +601,7 @@ function crearCometas() {
     const mesh = new THREE.Mesh(geometry, material);
 
     // Posición inicial
+    const randomAngle = Math.random() * Math.PI * 2;
     mesh.position.set(c.afelio, 0, 0);
 
     mesh.userData = {
@@ -609,12 +610,19 @@ function crearCometas() {
       perihelio: c.perihelio,
       afelio: c.afelio,
       velocidad: c.velocidad,
-      inclinacion: c.inclinacion
+      inclinacion: c.inclinacion,
+      periodoOrbital: c.periodoOrbital,
+      ultimoPerihelio: c.ultimoPerihelio,
+      siguientePerihelio: c.siguientePerihelio,
+      infoExtra: c.infoExtra,
+      datoCurioso: c.datoCurioso,
+      esCometa: true, // Para identificarlo fácilmente
+      rotationSpeed: 0.008 // Velocidad de rotación
     };
 
     scene.add(mesh);
     cometasMeshes.push(mesh);
-    cometasOrbitAngles.push(Math.random() * Math.PI * 2);
+    cometasOrbitAngles.push(randomAngle); //lo inicializamos con un ángulo aleatorio
   });
 }
 
@@ -722,7 +730,12 @@ const cometas = [
     perihelio: 8,
     afelio: 110,
     velocidad: 0.0012,
-    inclinacion: 0.6
+    inclinacion: 0.6,
+    periodoOrbital: '76 años terrestres',
+    ultimoPerihelio: '1986',
+    siguientePerihelio: '2061',
+    infoExtra: 'Cometa periódico más famoso, visible desde la Tierra cada 76 años aproximadamente.',
+    datoCurioso: 'El cometa Halley ha sido observado desde el año 240 a.C. y aparece en el Tapiz de Bayeux de 1066.'
   },
   {
     nombre: 'Encke',
@@ -731,7 +744,12 @@ const cometas = [
     perihelio: 6,
     afelio: 45,
     velocidad: 0.0022,
-    inclinacion: 0.3
+    inclinacion: 0.3,
+    periodoOrbital: '3.3 años terrestres',
+    ultimoPerihelio: '2023',
+    siguientePerihelio: '2027',
+    infoExtra: 'Cometa de período más corto conocido, nombrado en honor al astrónomo Johann Franz Encke.',
+    datoCurioso: 'El cometa Encke tiene la órbita más corta de todos los cometas conocidos, completando una vuelta cada 3.3 años.'
   }
 ];
 
@@ -940,6 +958,13 @@ function animate() {
       );
 
       mesh.rotation.y += 0.01;
+    });
+  }
+  if (missionStarted) {
+    cometasMeshes.forEach(mesh => {
+      if (mesh.userData && mesh.userData.rotationSpeed) {
+        mesh.rotation.y += mesh.userData.rotationSpeed;
+      }
     });
   }
 
@@ -2096,7 +2121,7 @@ function onClick(event) {
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(mouse, camera);
 
-  const clickableObjects = [...planetMeshes];
+  const clickableObjects = [...planetMeshes, ...cometasMeshes]; //ademas de los planetas tambien incluyo los cometas
   if (lunaMesh) clickableObjects.push(lunaMesh);
   if (issMesh) clickableObjects.push(issMesh);
 
@@ -2421,6 +2446,9 @@ function mostrarSoloPlanetaSeleccionado(object) {
   planetMeshes.forEach(mesh => {
     mesh.visible = false;
   });
+  cometasMeshes.forEach(comet => {
+    comet.visible = false;
+  });
   if (lunaMesh) lunaMesh.visible = false;
   if (issMesh) issMesh.visible = false;
   if (saturnRings) saturnRings.visible = false;
@@ -2428,18 +2456,27 @@ function mostrarSoloPlanetaSeleccionado(object) {
   // 5. Determinar el tipo de objeto y mostrar solo lo necesario
   const esLuna = object === lunaMesh || object.userData?.nombre === 'Luna';
   const esISS = object === issMesh || object.userData?.esISS || object.userData?.tipo === 'iss';
+  const esCometa = object.userData?.esCometa || object.userData?.tipo === 'cometa';
 
   if (esLuna) {
     // Mostrar Luna y Tierra
     const tierraMesh = planetMeshesMap.get('Tierra');
-    if (tierraMesh) tierraMesh.visible = true;
+    //if (tierraMesh) tierraMesh.visible = true;
     if (lunaMesh) lunaMesh.visible = true;
   }
   else if (esISS) {
     // Mostrar ISS y Tierra
     const tierraMesh = planetMeshesMap.get('Tierra');
-    if (tierraMesh) tierraMesh.visible = true;
+    //if (tierraMesh) tierraMesh.visible = true;
     if (issMesh) issMesh.visible = true;
+  }
+  else if (esCometa) {
+    // Mostrar solo el cometa
+    object.visible = true;
+
+    // Opcional: mostrar el Sol como referencia
+    const solMesh = planetMeshesMap.get('Sol');
+    if (solMesh) solMesh.visible = true;
   }
   else {
     // Mostrar solo el planeta seleccionado
@@ -2477,6 +2514,7 @@ function mostrarInformacionObjeto(object) {
   // Detectar qué tipo de objeto es
   const esLuna = object === lunaMesh || object.userData?.nombre === 'Luna';
   const esISS = object === issMesh || object.userData?.esISS || object.userData?.tipo === 'iss';
+  const esCometa = object.userData?.esCometa || object.userData?.tipo === 'cometa';
 
   if (esLuna) {
     infoHTML = `
@@ -2503,6 +2541,30 @@ function mostrarInformacionObjeto(object) {
       <button onclick="hidePlanetInfoPanel()" class="cockpit-btn mt-4">CERRAR</button>
     `;
     funfactsPanel.style.display = 'none';
+  }
+  else if (esCometa) {
+    // INFORMACIÓN PARA COMETAS
+    const cometaData = object.userData;
+
+    infoHTML = `
+      <h2 class="text-purple-300 text-xl font-bold mb-4">COMETA ${cometaData.nombre}</h2>
+      <p><strong>Tipo:</strong> Cometa periódico</p>
+      <p><strong>Período orbital:</strong> ${cometaData.periodoOrbital}</p>
+      <p><strong>Último perihelio:</strong> ${cometaData.ultimoPerihelio}</p>
+      <p><strong>Próximo perihelio:</strong> ${cometaData.siguientePerihelio}</p>
+      <p><strong>Distancia mínima (perihelio):</strong> ${cometaData.perihelio} unidades</p>
+      <p><strong>Distancia máxima (afelio):</strong> ${cometaData.afelio} unidades</p>
+      <p><strong>Inclinación orbital:</strong> ${(cometaData.inclinacion * 57.3).toFixed(1)}°</p>
+      <p class="mt-3">${cometaData.infoExtra}</p>
+      <button onclick="hidePlanetInfoPanel()" class="cockpit-btn mt-4">CERRAR</button>
+    `;
+
+    funfactText = cometaData.datoCurioso;
+    const funfactElement = funfactsPanel.querySelector('.planet-funfact');
+      if (funfactElement) {
+        typewriterEffect(funfactElement, funfactText, 35);
+      }
+      funfactsPanel.style.display = 'block';
   } else {
     // Para planetas normales
     const index = planetMeshes.indexOf(object);
@@ -2593,6 +2655,9 @@ function hidePlanetInfoPanel() {
   if (missionStarted) {
     planetMeshes.forEach(mesh => {
       mesh.visible = true;
+    });
+    cometasMeshes.forEach(comet => {
+      comet.visible = true;
     });
     if (lunaMesh) lunaMesh.visible = true;
     if (issMesh) issMesh.visible = true;
