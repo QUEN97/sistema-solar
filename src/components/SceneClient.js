@@ -149,17 +149,13 @@ let planetMeshesMap = new Map();
 let planetOrbitAngles = new Array(planetas.length).fill(0);
 let lunaMesh = null;
 let lunaOrbitAngle = 0;
-let issOrbitAngle = 0;
 let saturnRings = null;
 let issMesh = null;
 let cinturónMeshes = [];
 let cinturónOrbitAngles = [];
-let alineados = false;
-let planetaVisitadoIndex = 0;
 let audioStarted = false;
 let typewriterTimeout = null;
 
-// Variables para sistemas dinámicos
 // Variables para sistemas dinámicos
 let fuel = 100;
 let energy = 100;
@@ -180,11 +176,8 @@ let inSolarDangerZone = false;
 let shields = 100; // Nivel de escudos separado de energía
 
 // Variables para recuperación automática
-let autoRecoveryEnabled = true;
 let autoRecoveryInterval = null;
 let recoverySpeed = 0.5; // % por segundo
-
-let orientationCheckInterval = null;
 
 const ROTACION_VELOCIDAD = 0.005;
 const lookAtTarget = new THREE.Vector3();
@@ -210,7 +203,7 @@ const communicationMessages = [
 export function initScene() {
   const canvas = document.getElementById('scene');
   if (!canvas) {
-    console.error('❌ Canvas no encontrado');
+    //console.error('Canvas no encontrado');
     return;
   }
 
@@ -240,9 +233,6 @@ export function initScene() {
     // Desktop
     camera.position.set(0, 10, 60);
   }
-
-  // Configurar orientación para móviles
-  // setupMobileOrientation();
 
   camera.position.set(0, 10, 60);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -285,9 +275,9 @@ export function initScene() {
   crearPlanetas();
   crearLuna();
   crearISS().then(() => {
-    console.log('ISS completamente inicializada');
+    //console.log('ISS completamente inicializada');
   }).catch(error => {
-    console.error('Error al cargar ISS:', error);
+    //console.error('Error al cargar ISS:', error);
   });
   crearCinturónAsteroides();
   crearPolvoAsteroides();
@@ -321,7 +311,7 @@ export function initScene() {
   renderer.domElement.addEventListener('click', onClick, false);
   document.body.addEventListener('click', startAudio);
 
-  console.log('Escena 3D inicializada correctamente');
+  //console.log('Escena 3D inicializada correctamente');
 }
 
 /**
@@ -383,7 +373,9 @@ function startAudio() {
   const audio = new Audio('/audio/space-ambient.mp3');
   audio.loop = true;
   audio.volume = 0.5;
-  audio.play().catch(e => console.log('Audio no pudo reproducirse automáticamente'));
+  audio.play().catch(e => 
+    console.log('Audio no pudo reproducirse automáticamente')
+  );
   audioStarted = true;
 }
 
@@ -480,26 +472,6 @@ function showOrientationAlert() {
   });
 }
 
-// function setupMobileOrientation() {
-//   // Verificar orientación cada 500ms (para detectar cambios rápidos)
-//   if (orientationCheckInterval) {
-//     clearInterval(orientationCheckInterval);
-//   }
-
-//   orientationCheckInterval = setInterval(() => {
-//     updateHUDForMobile();
-//     onWindowResize();
-//   }, 500);
-
-//   // También escuchar eventos de orientación
-//   window.addEventListener('orientationchange', () => {
-//     setTimeout(() => {
-//       updateHUDForMobile();
-//       onWindowResize();
-//     }, 300); // Pequeño delay para que el navegador actualice dimensiones
-//   });
-// }
-
 /**
  * Crea todos los planetas del sistema solar como esferas 3D con texturas
  */
@@ -558,7 +530,7 @@ function crearPlanetas() {
     if (p.nombre === 'Saturno') {
       const ringGeo = new THREE.RingGeometry(size * 1.4, size * 2.4, 256);
       const ringTexture = loader.load('/textures/saturn_ring.png');
-      ringTexture.rotation = Math.PI / 2; // 90 grados
+      ringTexture.rotation = Math.PI / 2; // 90 grados para que no se vean verticales al planeta
       ringTexture.center.set(0.5, 0.5);   // Rotar desde el centro
       const ringMat = new THREE.MeshBasicMaterial({
         map: ringTexture,
@@ -675,7 +647,7 @@ function crearISS() {
         });
 
         scene.add(issMesh);
-        console.log('ISS cargada correctamente');
+        //console.log('ISS cargada correctamente');
         resolve(issMesh);
       },
       undefined,
@@ -920,7 +892,7 @@ function animate() {
     checkSolarProximity();
   }
 
-  // También agregar rotación durante la misión (cuando no están orbitando)
+  // También agregamos rotación durante la misión (cuando no están orbitando)
   if (missionStarted) {
     planetMeshes.forEach((mesh, i) => {
       if (mesh.userData && mesh.userData.rotationSpeed) {
@@ -1016,10 +988,10 @@ function animate() {
  * Inicia el modo de exploración libre del sistema solar
  */
 function comenzarMision() {
-  console.log('Iniciando misión...');
+  //console.log('Iniciando misión...');
   // Verificar que haya suficiente combustible
   if (fuel < 50) {
-    showAlert(`❌ COMBUSTIBLE INSUFICIENTE: ${Math.round(fuel)}% - MÍNIMO 50% REQUERIDO`, 4000);
+    showAlert(`COMBUSTIBLE INSUFICIENTE: ${Math.round(fuel)}% - MÍNIMO 50% REQUERIDO`, 4000);
     return;
   }
 
@@ -1029,7 +1001,7 @@ function comenzarMision() {
 
   // Verificar que haya suficiente energía
   if (energy < 30) {
-    showAlert(`❌ ENERGÍA INSUFICIENTE: ${Math.round(energy)}% - RECARGAR SISTEMAS`, 4000);
+    showAlert(`ENERGÍA INSUFICIENTE: ${Math.round(energy)}% - RECARGAR SISTEMAS`, 4000);
     return;
   }
   missionStarted = true;
@@ -1053,7 +1025,7 @@ function comenzarMision() {
   hideExploreButton();
   hidePlanetInfoPanel();
 
-  // Asegurar que todos los objetos sean visibles
+  // Aseguramos que todos los objetos sean visibles
   planetMeshes.forEach(mesh => {
     mesh.visible = true;
   });
@@ -1095,10 +1067,6 @@ function comenzarMision() {
   if (mobileStartBtn) mobileStartBtn.style.display = 'none';
   if (mobileEndBtn) mobileEndBtn.style.display = 'block';
 
-  // if (renderer) {
-  //   renderer.domElement.style.pointerEvents = 'auto';
-  // }
-
   // Actualizar interfaz de usuario
   const comenzarBtn = document.getElementById('comenzar-btn');
   const finalizarBtn = document.getElementById('finalizar-btn');
@@ -1108,14 +1076,14 @@ function comenzarMision() {
   // Inicializar radar en tiempo real
   initRadarSystem();
 
-  console.log('Misión iniciada correctamente');
+  //console.log('Misión iniciada correctamente');
 }
 
 /**
  * Finaliza el modo de exploración y vuelve a la vista automática
  */
 function finalizarMision() {
-  console.log('Finalizando misión...');
+  //console.log('Finalizando misión...');
   missionStarted = false;
 
   // Resetear sistema de daño solar
@@ -1200,7 +1168,7 @@ function finalizarMision() {
   if (finalizarBtn) finalizarBtn.style.display = 'none';
 
   // Iniciar recarga automática si combustible está bajo
-  if (fuel < 50) {
+  if (fuel < 10) {
     setTimeout(startRefueling, 2000);
   }
 
@@ -1231,7 +1199,7 @@ function actualizarEstadoNavegacion(estado) {
  * Inicializa todos los sistemas dinámicos del HUD
  */
 function initDynamicSystems() {
-  console.log('Inicializando sistemas dinámicos del HUD...');
+  //console.log('Inicializando sistemas dinámicos del HUD...');
 
   // Inicializar combustible y energía
   fuel = 100;
@@ -1260,7 +1228,7 @@ function initDynamicSystems() {
   initRealTimeSystems();
 
 
-  console.log('Sistemas dinámicos inicializados');
+  //console.log('Sistemas dinámicos inicializados');
 }
 
 /**
@@ -1270,7 +1238,7 @@ function initBatterySystem() {
   // API de Battery Status del navegador
   if ('getBattery' in navigator) {
     navigator.getBattery().then(battery => {
-      console.log('🔋 Batería del dispositivo detectada:', Math.round(battery.level * 100), '%');
+      //console.log('Batería del dispositivo detectada:', Math.round(battery.level * 100), '%');
 
       // Actualizar UI inicial
       updateBatteryUI(battery.level * 100, battery.charging);
@@ -1291,7 +1259,7 @@ function initBatterySystem() {
     });
   } else {
     // Fallback: simular batería del dispositivo
-    console.log('⚠️ API de batería no disponible, usando simulación');
+    //console.log('API de batería no disponible, usando simulación');
     const simulatedBattery = 75; // 75% por defecto
     const isCharging = false;
 
@@ -1522,7 +1490,7 @@ function updateFuelUI() {
 
   // Alertas de combustible crítico
   if (fuel < 20 && fuel > 0 && missionStarted) {
-    showAlert('⚠️ COMBUSTIBLE CRÍTICO - REGRESAR A BASE', 3000);
+    showAlert('COMBUSTIBLE CRÍTICO - REGRESAR A BASE', 3000);
   }
 }
 
@@ -1602,7 +1570,7 @@ function updateSystemsByEnergy(energyLevel) {
   const shieldsElement = document.querySelector('.compact-system:nth-child(3) .compact-system-status');
 
   if (!sensorsElement || !shieldsElement) {
-    console.warn('⚠️ Elementos de sensores o escudos no encontrados');
+    //console.warn('Elementos de sensores o escudos no encontrados');
     return;
   }
 
@@ -1621,13 +1589,13 @@ function updateSystemsByEnergy(energyLevel) {
   // Alertas si sistemas están críticos
   if (missionStarted) {
     if (sensorsLevel < 30) {
-      showAlert('⚠️ SENSORES CRÍTICOS - VISIBILIDAD REDUCIDA', 2000);
+      showAlert('SENSORES CRÍTICOS - VISIBILIDAD REDUCIDA', 2000);
     }
     if (shieldsLevel < 20) {
-      showAlert('🛡️ ESCUDOS CRÍTICOS - VULNERABILIDAD ALTA', 2000);
+      showAlert('ESCUDOS CRÍTICOS - VULNERABILIDAD ALTA', 2000);
     }
     if (shieldsLevel <= 0) {
-      showAlert('💥 ESCUDOS DESTRUIDOS - EXPUESTO A RADIACIÓN SOLAR', 3000);
+      showAlert('ESCUDOS DESTRUIDOS - EXPUESTO A RADIACIÓN SOLAR', 3000);
     }
   }
 }
@@ -1738,7 +1706,7 @@ function startRefueling() {
   if (isRefueling) return;
 
   isRefueling = true;
-  showAlert('⛽ RECARGANDO COMBUSTIBLE Y ENERGÍA...', 3000);
+  showAlert('RECARGANDO COMBUSTIBLE Y ENERGÍA...', 3000);
 
   refuelInterval = setInterval(() => {
     // Recargar más rápido cuando está en 0
@@ -1757,7 +1725,7 @@ function startRefueling() {
     // Si ambos están llenos, detener recarga
     if (fuel >= 100 && energy >= 100) {
       stopRefueling();
-      showAlert('✅ RECARGA COMPLETA - SISTEMAS AL 100%', 3000);
+      showAlert('RECARGA COMPLETA - SISTEMAS AL 100%', 3000);
     }
   }, 500);
 }
@@ -1902,7 +1870,7 @@ function recoverAllSystems() {
     if (autoRecoveryInterval) {
       clearInterval(autoRecoveryInterval);
       autoRecoveryInterval = null;
-      console.log('✅ Sistemas recuperados a niveles normales');
+      console.log('Sistemas recuperados a niveles normales');
     }
   }
 }
@@ -2063,13 +2031,13 @@ function generateContextualAlerts() {
   if (distanceToSun < solarWarningDistance && distanceToSun >= solarDangerDistance) {
     // Solo mostrar cada 10 segundos para no saturar
     if (Math.random() < 0.2) {
-      showAlert('🌡️ PROXIMIDAD AL SOL - TEMPERATURA AUMENTANDO', 2000);
+      showAlert('PROXIMIDAD AL SOL - TEMPERATURA AUMENTANDO', 2000);
     }
   }
 
   // Alerta de escudos bajos por daño solar
   if (inSolarDangerZone && shields < 50 && Math.random() < 0.3) {
-    showAlert('🔥 DAÑO SOLAR DETECTADO - ESCUDOS BAJANDO', 2000);
+    showAlert('DAÑO SOLAR DETECTADO - ESCUDOS BAJANDO', 2000);
   }
 
   // Alerta de cinturón de asteroides (mantener esta)
@@ -2142,7 +2110,7 @@ function createCockpitParticles() {
  */
 function onClick(event) {
   if (!missionStarted) {
-    console.log('Misión no iniciada - no se puede seleccionar');
+    //console.log('Misión no iniciada - no se puede seleccionar');
     return;
   }
 
@@ -2291,7 +2259,7 @@ function showExploreButton(object) {
     };
 
   } catch (error) {
-    console.error('Error en showExploreButton:', error);
+    //console.error('Error en showExploreButton:', error);
     // Fallback: mostrar botón en posición segura
     exploreBtn.style.left = '50%';
     exploreBtn.style.top = '30%';
@@ -2373,7 +2341,7 @@ function explorarObjeto(object) {
     const objectWorldPos = new THREE.Vector3();
     object.getWorldPosition(objectWorldPos);
 
-    console.log(`Explorando ${object.userData?.nombre || 'objeto'} en posición:`, objectWorldPos);
+  //console.log(`Explorando ${object.userData?.nombre || 'objeto'} en posición:`, objectWorldPos);
 
     // Calcular posición de cámara basada en el tipo de objeto
     let targetPosition;
@@ -2452,7 +2420,7 @@ function explorarObjeto(object) {
     });
 
   } catch (error) {
-    console.error('Error en explorarObjeto:', error);
+    //console.error('Error en explorarObjeto:', error);
     // Fallback: usar posición aproximada
     const fallbackPosition = new THREE.Vector3(
       object.position.x || 0,
@@ -2768,17 +2736,17 @@ function checkSolarProximity() {
 
   // Si acabamos de entrar en zona de peligro, mostrar alerta
   if (inSolarDangerZone && !wasInDangerZone) {
-    showAlert('⚠️ ZONA DE PELIGRO SOLAR - ESCUDOS BAJANDO', 3000);
+    showAlert('ZONA DE PELIGRO SOLAR - ESCUDOS BAJANDO', 3000);
   }
 
   // Si salimos de la zona de peligro, mostrar alerta de recuperación
   if (!inSolarDangerZone && wasInDangerZone) {
-    showAlert('✅ SALIENDO DE ZONA SOLAR - ESCUDOS SE RECUPERAN', 2000);
+    showAlert('SALIENDO DE ZONA SOLAR - ESCUDOS SE RECUPERAN', 2000);
   }
 
   // Mostrar advertencia si estamos cerca pero no en peligro
   if (distanceToSun < solarWarningDistance && distanceToSun >= solarDangerDistance) {
-    showAlert('🌡️ PROXIMIDAD AL SOL - MANTENER DISTANCIA', 2000);
+    showAlert('PROXIMIDAD AL SOL - MANTENER DISTANCIA', 2000);
   }
 
   // Aplicar daño a escudos si estamos en zona de peligro
@@ -2820,13 +2788,13 @@ function applySolarDamage(distanceToSun) {
 
   // Si los escudos están críticos, mostrar alertas
   if (shields < 30 && shields > 0) {
-    showAlert('🛡️ ESCUDOS CRÍTICOS - ALEJARSE DEL SOL INMEDIATAMENTE', 2000);
+    showAlert('ESCUDOS CRÍTICOS - ALEJARSE DEL SOL INMEDIATAMENTE', 2000);
   }
 
   // Si los escudos llegan a 0
   if (shields <= 0 && missionStarted) {
     shields = 0;
-    showAlert('💥 ESCUDOS DESTRUIDOS - SISTEMAS EN PELIGRO', 4000);
+    showAlert('ESCUDOS DESTRUIDOS - SISTEMAS EN PELIGRO', 4000);
 
     // Aplicar daño directo a la nave (energía y combustible)
     applyDirectDamage();
@@ -2851,11 +2819,11 @@ function applyDirectDamage() {
 
   // Si la energía o combustible son críticos
   if (energy < 20) {
-    showAlert('🔋 ENERGÍA CRÍTICA - PELIGRO DE APAGÓN', 2000);
+    showAlert('ENERGÍA CRÍTICA - PELIGRO DE APAGÓN', 2000);
   }
 
   if (fuel < 20) {
-    showAlert('⛽ COMBUSTIBLE CRÍTICO - PROPULSIÓN COMPROMETIDA', 2000);
+    showAlert('COMBUSTIBLE CRÍTICO - PROPULSIÓN COMPROMETIDA', 2000);
   }
 }
 
@@ -3005,7 +2973,7 @@ export function hudController() {
           window.initDynamicSystems();
         }
         this.iniciado = true;
-        console.log('🚀 Sistema de nave espacial completamente inicializado');
+        //console.log('Sistema de nave espacial completamente inicializado');
       }, 1000);
     }
   };
