@@ -597,7 +597,7 @@ function crearCometas() {
       emissive: 0xffffff,
       emissiveIntensity: 0.4
     });
-
+    
     const mesh = new THREE.Mesh(geometry, material);
 
     // Posición inicial
@@ -619,7 +619,7 @@ function crearCometas() {
       esCometa: true, // Para identificarlo fácilmente
       rotationSpeed: 0.008 // Velocidad de rotación
     };
-
+    crearColaCometa(mesh);
     scene.add(mesh);
     cometasMeshes.push(mesh);
     cometasOrbitAngles.push(randomAngle); //lo inicializamos con un ángulo aleatorio
@@ -755,6 +755,41 @@ const cometas = [
 
 let cometasMeshes = [];
 let cometasOrbitAngles = [];
+
+/**
+ * Cola de cometas
+ */
+function crearColaCometa(cometMesh) {
+  // Crear un sistema de partículas para simular la cola
+  const particleCount = 50;
+  const positions = [];
+
+  for (let i = 0; i < particleCount; i++) {
+    const distance = i * 0.2;
+    const spread = 0.1;
+
+    positions.push(
+      -distance, // Detrás del cometa
+      (Math.random() - 0.5) * spread,
+      (Math.random() - 0.5) * spread
+    );
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    color: 0x00ffff,
+    size: 0.05,
+    transparent: true,
+    opacity: 0.6
+  });
+
+  const tail = new THREE.Points(geometry, material);
+  cometMesh.add(tail);
+
+  return tail;
+}
 
 /**
  * Crea partículas de polvo estelar en el cinturón de asteroides
@@ -2561,10 +2596,10 @@ function mostrarInformacionObjeto(object) {
 
     funfactText = cometaData.datoCurioso;
     const funfactElement = funfactsPanel.querySelector('.planet-funfact');
-      if (funfactElement) {
-        typewriterEffect(funfactElement, funfactText, 35);
-      }
-      funfactsPanel.style.display = 'block';
+    if (funfactElement) {
+      typewriterEffect(funfactElement, funfactText, 35);
+    }
+    funfactsPanel.style.display = 'block';
   } else {
     // Para planetas normales
     const index = planetMeshes.indexOf(object);
